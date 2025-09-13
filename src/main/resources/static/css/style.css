@@ -87,6 +87,12 @@ label {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+.btn-custom:hover {
+    background-color: #FFA500 !important;
+    border-color: #FFA500 !important;
+    color: #fff !important;
+}
+
 .definition:hover {
     background-color: #ffc107;
     color: #000;

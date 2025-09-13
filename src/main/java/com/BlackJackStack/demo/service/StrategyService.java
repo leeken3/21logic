@@ -56,7 +56,7 @@ public class StrategyService {
         response.setDealerBustPercentage(estimateDealerBustChance(dealerCard));
         response.setExpectedValue(estimateExpectedValue(playerHand, dealerCard));
         response.setDealerMakesHandPercentage(estimateDealerMakesHandChance(dealerCard));
-        response.setExplanation(explainMove(move, playerHand.getValue(), playerHand.isSoft()));
+        response.setExplanation(explainMove(move, playerHand, playerHand.getValue(), playerHand.isSoft()));
         return response;
     }
 
@@ -341,12 +341,15 @@ public class StrategyService {
      * @param isSoft boolean indicating if the hand is soft
      * @return an explanation as a String
      */
-    private String explainMove(String move, int playerTotal, boolean isSoft) {
+    private String explainMove(String move, Hand playerHand, int playerTotal, boolean isSoft) {
         if ("hit".equals(move) && isSoft) {
             return "You have a soft hand (an Ace counted as 11). You should take another card to try to improve your hand without the risk of busting.";
         } else if ("double down".equals(move) && isSoft) {
             return "You have a soft hand (an Ace counted as 11). Doubling down allows you to take advantage of your flexible "
                     + "hand to potentially make a strong total with one more card. The dealer has a high chance of busting or making a weaker hand.";
+        } else if (("stand".equals(move) && isSoft && (playerTotal == 19 || playerTotal == 20))) {
+            return "You have a strong soft hand with an Ace counted as 11. You should keep your current hand and not take any more cards. "
+                    + "You are unlikely to make your hand better by hitting. The dealer has a high chance of busting or making a weaker hand.";
         } else if ("hit".equals(move) && playerTotal <= 10) {
             return "You should take another card to try to improve your hand. You will not bust with one more card.";
         } else if ("hit".equals(move) && (playerTotal == 12 || playerTotal == 13)) {
@@ -377,6 +380,11 @@ public class StrategyService {
                     + "and the dealer has a high chance of busting or making a weaker hand.";
         } else if ("double down".equals(move)) {
             return "You should double your bet and take exactly one more card.";
+        } else if ("split".equals(move) && playerHand.getCards().size() == 2 &&
+                playerHand.getCards().get(0).getRank().equals("A") &&
+                playerHand.getCards().get(1).getRank().equals("A")) {
+           return "You have a pair of aces. Always split aces to maximize your chances of making a strong hand as you're likely"
+                   + " to get a 10-value card on one or both hands. Each ace can then count as 11.";
         } else if ("split".equals(move) && playerTotal == 16) {
             return "Always split 8s. 16 is the worst hand in blackjack, and splitting gives you a chance to improve both hands.";
         } else if ("split".equals(move)){

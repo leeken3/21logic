@@ -103,11 +103,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	                endGame("🤝 Push. Bet returned.");
 	                return;
 	            } else {
-	                endGame(`🎉 Blackjack! You win +$${(bet * 1.5).toFixed(2)}`);
+	                endGame(`✅ Blackjack! You win +$${(bet * 1.5).toFixed(2)}`);
 	                return;
 	            }
 	        } else {
-	            endGame(`🎉 Blackjack! You win +$${(bet * 1.5).toFixed(2)}`);
+	            endGame(`✅ Blackjack! You win +$${(bet * 1.5).toFixed(2)}`);
 	            return;
 	        }
 	    }
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	    let dealerTotal = handValue(dealerHand);
 
 	    if (dealerTotal > 21) {
-			endGame(`🎉 Dealer busts! You win +$${bet}`);
+			endGame(`✅ Dealer busts! You win +$${bet}`);
 		} else if (playerTotal > dealerTotal) {
 	        endGame(`✅ You win, you beat the dealer! +$${bet}`);
 	    } else if (dealerTotal === playerTotal) {
@@ -130,9 +130,19 @@ document.addEventListener("DOMContentLoaded", () => {
 	    }
 	}
 
-	/* Play button handler to start a new game*/
+	// Play button handler to start a new game
 	document.getElementById("playBtn").addEventListener("click", () => {
-		hasSplit = false;
+	    const card1Value = document.getElementById("card1").value;
+	    const card2Value = document.getElementById("card2").value;
+	    const dealerValue = document.getElementById("dealer").value;
+
+	    // Check if all inputs are filled
+	    if (!card1Value || !card2Value || !dealerValue) {
+	        alert("Please enter all three card values before playing.");
+	        return;
+	    }
+
+	    hasSplit = false;
 	    document.getElementById("initialCards").style.display = "none";
 	    deck = createDeck(); // Always reset deck at the start of a round
 	    if (originalPlayerHand && originalDealerHand) {
@@ -155,9 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	        document.getElementById("result").innerHTML = "";
 	    } else {
 	        // Normal play logic
-	        const card1Value = document.getElementById("card1").value;
-	        const card2Value = document.getElementById("card2").value;
-	        const dealerValue = document.getElementById("dealer").value;
 	        playerHand = [{ value: card1Value }, { value: card2Value }];
 	        dealerHand = [{ value: dealerValue }];
 	        bet = 10;
@@ -169,15 +176,25 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 
+
 	/* Hit button handler */
 	document.getElementById("hitBtn").addEventListener("click", () => {
 	    if (playerHand1 && playerHand2) {
 	        let hand = currentHand === 1 ? playerHand1 : playerHand2;
 	        hand.push(deck.pop());
 	        renderHands();
+	        if (handValue(hand) === 21) {
+	            if (currentHand === 1) {
+	                playerHand2.push(deck.pop());
+	                currentHand = 2;
+	                renderHands();
+	            } else {
+	                dealerTurnSplit();
+	            }
+	            return;
+	        }
 	        if (handValue(hand) > 21) {
 	            if (currentHand === 1) {
-	                // Move to hand 2, deal second card
 	                playerHand2.push(deck.pop());
 	                currentHand = 2;
 	                renderHands();
@@ -188,6 +205,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	    } else {
 	        playerHand.push(deck.pop());
 	        renderHands();
+	        if (handValue(playerHand) === 21) {
+	            dealerTurn();
+	            return;
+	        }
 	        if (handValue(playerHand) > 21) {
 	            endGame(`💥 Bust! You lose -$${bet}`);
 	        }
