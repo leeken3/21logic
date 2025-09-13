@@ -3,7 +3,7 @@
 ## Project Description
 This is a simple Blackjack simulator engine implemented using Spring Boot as the main framework. The application simulates a hand of Blackjack and provides basic strategy recommendations based on the player's hand and the dealer's upcard.
 The user is also able to interactively play out the hand against the dealer. The application provides insights into the probabilities of busting for both the player and the dealer, as well as an analysis of the dealer's upcard.
-This application was developed as a personal project to enhance my understanding of Spring Boot as a back-end framework, Java programming, JUnit automated testing, and cloud deployment on Amazon Web Services (AWS).
+This application was developed as a personal project to enhance my understanding of Spring Boot as a back-end framework while using Java programming, JUnit automated testing, and cloud deployment on Amazon Web Services (AWS).
 
 ## Key Features
 - Provides basic strategy recommendations such as hit, stand, double down, and split
