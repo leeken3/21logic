@@ -3,7 +3,7 @@
 ## Project Description
 This is a simple Blackjack simulator engine implemented using Spring Boot as the main framework. The application simulates a hand of Blackjack and provides basic strategy recommendations based on the player's hand and the dealer's upcard.
 The user is also able to interactively play out the hand against the dealer. The application provides insights into the probabilities of busting for both the player and the dealer, as well as an analysis of the dealer's upcard.
-This application was developed as a personal project to enhance my understanding of Spring Boot as a back-end framework, Java programming, JUnit automated testing, and cloud deployment on Amazon Web Services (AWS).
+This application was developed as a personal project to enhance my understanding of Spring Boot as a back-end framework while using Java programming, JUnit automated testing, and cloud deployment on Amazon Web Services (AWS).
 
 ## Key Features
 - Provides basic strategy recommendations such as hit, stand, double down, and split
@@ -49,14 +49,14 @@ For this project, I wanted to explore and learn more about Spring Boot, so I cho
 - Postman (v10.18.1): For testing and debugging RESTful APIs
 
 ## Usage
-- Visit the deployed application at: http://21logic-env.eba-3m3fbbxp.us-west-2.elasticbeanstalk.com/
+- Visit the deployed application at: http://21logicapplication-env.eba-gqaqabce.us-east-2.elasticbeanstalk.com/
 - Input the player's hand and dealer's upcard
 - Click "Get Recommendation" to receive a basic strategy recommendation, bust probabilities, and dealer upcard analysis
 - Optionally, play out the hand interactively against the dealer
 
 ## Installation
 - Ensure you have Java 17 and Maven installed on your machine.
-- Clone the repository: `git clone
+- Clone the repository: `git clone`
 - Navigate to the project directory: `cd BlackJackStack`
 - Build the project using Maven: `mvn clean install`
 - Run the application: `mvn spring-boot:run`
@@ -89,7 +89,7 @@ The project follows a standard Maven project structure:
 - The application does not include a database for storing historical game data, user profiles, authentication, or account management.
 - The application does not currently support mobile responsiveness or accessibility features.
 
-## Future Enhancements
+### Future Enhancements
 - Implement advanced betting strategies, side bets, insurance options, surrender options, and multi-deck support.
 - Include Blackjack variants such as Spanish 21, Free Bet Blackjack, Double Down Madness and more.
 - Improve the user interface with more interactive elements and better design.

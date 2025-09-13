@@ -357,7 +357,7 @@ public class StrategyService {
                     + "the dealer has over a 60% probability of making a hand. However, the expected value of hitting is negative.";
         } else if ("hit".equals(move) && playerTotal >= 13) {
             return "Even though your chance of busting is higher, you should take another card to "
-                    + "try to improve your hand as the dealer has over a 75% probability of making a hand.";
+                    + "try to improve your hand as the dealer has a very high probability of making a hand.";
         } else if ("stand".equals(move) && playerTotal == 21) {
             return "You have a Blackjack! You should keep your current hand and not take any more cards. "
                     + " You will win unless the dealer also has a Blackjack, which is a push.";

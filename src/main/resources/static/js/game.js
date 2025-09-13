@@ -93,24 +93,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	/* Dealer's turn logic */
 	function dealerTurn() {
+	    // Always draw dealer's second card and render hands first
+	    if (dealerHand.length === 1) {
+	        dealerHand.push(deck.pop());
+	        renderHands();
+	    }
+
+	    // Check for player blackjack
 	    if (isBlackjack(playerHand)) {
-	        // Dealer upcard is 10 or A
-	        if (["10", "A"].includes(dealerHand[0].value)) {
-	            // Dealer draws second card
-	            dealerHand.push(deck.pop());
-	            renderHands();
-	            if (isBlackjack(dealerHand)) {
-	                endGame("🤝 Push. Bet returned.");
-	                return;
-	            } else {
-	                endGame(`✅ Blackjack! You win +$${(bet * 1.5).toFixed(2)}`);
-	                return;
-	            }
+	        if (isBlackjack(dealerHand)) {
+	            endGame("🤝 Push. Bet returned.");
+	            return;
 	        } else {
 	            endGame(`✅ Blackjack! You win +$${(bet * 1.5).toFixed(2)}`);
 	            return;
 	        }
 	    }
+
+	    // Check for dealer blackjack
+	    if (isBlackjack(dealerHand)) {
+	        if (isBlackjack(playerHand)) {
+	            endGame("🤝 Push. Bet returned.");
+	            return;
+	        }
+	        if (handValue(playerHand) === 21 && playerHand.length > 2) {
+	            endGame(`❌ Dealer has blackjack. You lose -$${bet}`);
+	            return;
+	        }
+	        endGame(`❌ Dealer has blackjack. You lose -$${bet}`);
+	        return;
+	    }
+
 	    while (handValue(dealerHand) < 17) {
 	        dealerHand.push(deck.pop());
 	    }
@@ -120,8 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	    let dealerTotal = handValue(dealerHand);
 
 	    if (dealerTotal > 21) {
-			endGame(`✅ Dealer busts! You win +$${bet}`);
-		} else if (playerTotal > dealerTotal) {
+	        endGame(`✅ Dealer busts! You win +$${bet}`);
+	    } else if (playerTotal > dealerTotal) {
 	        endGame(`✅ You win, you beat the dealer! +$${bet}`);
 	    } else if (dealerTotal === playerTotal) {
 	        endGame("🤝 Push. Bet returned.");
@@ -129,6 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	        endGame(`❌ Dealer wins. -$${bet}`);
 	    }
 	}
+
+
 
 	// Play button handler to start a new game
 	document.getElementById("playBtn").addEventListener("click", () => {
