@@ -89,7 +89,7 @@ The project follows a standard Maven project structure:
 - The application does not include a database for storing historical game data, user profiles, authentication, or account management.
 - The application does not currently support mobile responsiveness or accessibility features.
 
-## Future Enhancements
+### Future Enhancements
 - Implement advanced betting strategies, side bets, insurance options, surrender options, and multi-deck support.
 - Include Blackjack variants such as Spanish 21, Free Bet Blackjack, Double Down Madness and more.
 - Improve the user interface with more interactive elements and better design.
