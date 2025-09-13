@@ -49,7 +49,7 @@ For this project, I wanted to explore and learn more about Spring Boot, so I cho
 - Postman (v10.18.1): For testing and debugging RESTful APIs
 
 ## Usage
-- Visit the deployed application at: http://21logic-env.eba-3m3fbbxp.us-west-2.elasticbeanstalk.com/
+- Visit the deployed application at: http://21logicapplication-env.eba-gqaqabce.us-east-2.elasticbeanstalk.com/
 - Input the player's hand and dealer's upcard
 - Click "Get Recommendation" to receive a basic strategy recommendation, bust probabilities, and dealer upcard analysis
 - Optionally, play out the hand interactively against the dealer
