@@ -265,16 +265,16 @@ label {
 }
 
 /* Default style for action-info */
-.action-info i {
+.action-info i,
+.action-info .question-icon {
     font-size: 1.1em;
     margin-left: -5px;
     cursor: pointer;
     transition: color 0.2s;
 }
 
-/* Match icon color to button */
-#hitBtn + .action-info i { color: #198754; }      /* Bootstrap success */
-#standBtn + .action-info i { color: #dc3545; }    /* Bootstrap danger */
-#doubleBtn + .action-info i { color: #ffc107; }   /* Bootstrap warning */
-#splitBtn + .action-info i { color: #0dcaf0; }    /* Bootstrap info */
+#hitBtn + .action-info .question-icon { color: #198754; }      /* Bootstrap success */
+#standBtn + .action-info .question-icon { color: #dc3545; }    /* Bootstrap danger */
+#doubleBtn + .action-info .question-icon { color: #ffc107; }   /* Bootstrap warning */
+#splitBtn + .action-info .question-icon { color: #0dcaf0; }    /* Bootstrap info */
 

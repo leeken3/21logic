@@ -12,7 +12,7 @@
 
     <!-- Custom Styles -->
     <link rel="stylesheet" th:href="@{/css/style.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 <body>
 	<!-- Header Section -->
@@ -76,7 +76,8 @@
                 <div class="col-auto">
                     <label>Dealer Up Card</label><br>
 					<input type="text" name="dealer" id="dealer" class="form-control card-input"
-					    required pattern="^(2|3|4|5|6|7|8|9|10|A, J, Q, or K only"
+					    required pattern="^(2|3|4|5|6|7|8|9|10|A|J|Q|K)$"
+					    title="Enter 2-10, A, J, Q, or K only"
 					    th:value="${dealer}">
                 </div>
             </div>
@@ -120,35 +121,36 @@
 				</div>
 
 				<div id="actions" class="mt-3">
-				    <div style="display:inline-block; position:relative;">
-				        <button class="btn btn-success m-1" id="hitBtn">Hit</button>
-				        <span class="action-info">
-				            <i class="fas fa-question-circle"></i>
-				            <span class="action-tooltip">Take another card to try to improve your hand. If you are over a value of 21, you will automatically lose your bet.</span>
-				        </span>
-				    </div>
-				    <div style="display:inline-block; position:relative;">
-				        <button class="btn btn-danger m-1" id="standBtn">Stand</button>
-				        <span class="action-info">
-				            <i class="fas fa-question-circle"></i>
-				            <span class="action-tooltip">Keep your current hand and end your turn. The dealer must draw if they have less than a value of 16.</span>
-				        </span>
-				    </div>
-				    <div style="display:inline-block; position:relative;">
-				        <button class="btn btn-warning m-1" id="doubleBtn">Double Down</button>
-				        <span class="action-info">
-				            <i class="fas fa-question-circle"></i>
-				            <span class="action-tooltip">Double your bet and only take one more card. Your turn will automatically end.</span>
-				        </span>
-				    </div>
-				    <div style="display:inline-block; position:relative;">
-				        <button class="btn btn-info m-1" id="splitBtn">Split</button>
-				        <span class="action-info">
-				            <i class="fas fa-question-circle"></i>
-				            <span class="action-tooltip">Only applicable if you have a pair. Double your bet and split your hand into two separate hands against the dealer.</span>
-				        </span>
-				    </div>
-				</div>
+		    <div style="display:inline-block; position:relative;">
+		        <button class="btn btn-success m-1" id="hitBtn">Hit</button>
+		        <span class="action-info">
+		            <span class="question-icon">&#63;</span>
+		            <span class="action-tooltip">Take another card to try to improve your hand. If you are over a value of 21, you will automatically lose your bet.</span>
+		        </span>
+		    </div>
+		    <div style="display:inline-block; position:relative;">
+		        <button class="btn btn-danger m-1" id="standBtn">Stand</button>
+		        <span class="action-info">
+		            <span class="question-icon">&#63;</span>
+		            <span class="action-tooltip">Keep your current hand and end your turn. The dealer must draw if they have less than a value of 16.</span>
+		        </span>
+		    </div>
+		    <div style="display:inline-block; position:relative;">
+		        <button class="btn btn-warning m-1" id="doubleBtn">Double Down</button>
+		        <span class="action-info">
+		            <span class="question-icon">&#63;</span>
+		            <span class="action-tooltip">Double your bet and only take one more card. Your turn will automatically end.</span>
+		        </span>
+		    </div>
+		    <div style="display:inline-block; position:relative;">
+		        <button class="btn btn-info m-1" id="splitBtn">Split</button>
+		        <span class="action-info">
+		            <span class="question-icon">&#63;</span>
+		            <span class="action-tooltip">Only applicable if you have a pair. Double your bet and split your hand into two separate hands against the dealer.</span>
+		        </span>
+		    </div>
+		</div>
+
 		        </div>
 		        <div id="result" class="mt-4"></div>
 		    </div>
