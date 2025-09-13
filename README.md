@@ -56,7 +56,7 @@ For this project, I wanted to explore and learn more about Spring Boot, so I cho
 
 ## Installation
 - Ensure you have Java 17 and Maven installed on your machine.
-- Clone the repository: git clone
+- Clone the repository: `git clone`
 - Navigate to the project directory: `cd BlackJackStack`
 - Build the project using Maven: `mvn clean install`
 - Run the application: `mvn spring-boot:run`
