@@ -14,57 +14,151 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-
+	<!-- Header Section -->
     <h1>21Logic</h1>
     <h2>Blackjack Simulation Engine</h2>
 
+	<!-- Top right header with name and info icon -->
+	<div class="header-top-right">
+	    <span class="header-name">Developed by Ken Lee</span>
+	    <span class="header-info">
+	        <span class="info-icon">&#9432;</span>
+			<span class="info-tooltip">
+			    Welcome to 21Logic! This is a Blackjack simulator that provides optimal move recommendations from basic strategy based on your hand and the dealer's up card.
+			    Enter your two cards and the dealer's up card, then click "Get Recommendation" to see the best move along with probabilities and expected value.
+			    You can also play out the hand interactively by clicking "Play Hand". Enjoy!
+	        </span>
+	    </span>
+	    <div class="header-alert" style="margin-top: 4px;">
+	        <span class="alert-icon">&#9888;
+	            <span class="alert-tooltip">
+	                Please note that this simulator is for educational purposes only and does not guarantee winning outcomes in real gambling scenarios.
+	                The app was developed to explore Blackjack strategies and probabilities with back-end logic. It does not promote any form of gambling.
+	            </span>
+	        </span>
+	    </div>
+	    <div class="header-deck" style="margin-top: 4px;">
+        <span class="deck-icon">&#127185;
+            <span class="deck-tooltip">
+                This simulator uses a standard 52-card deck with 6 decks shuffled together. Cards are drawn randomly for each hand.
+                The dealer stands on all 17s. Dealer has no hole card and draws after player finishes their action.
+                Blackjack pays 3:2. Double down is allowed on any two initial cards.
+                Splits are allowed once per hand (up to two hands total). No surrender option is available. No insurance bets. No side bets.
+                Play hands are used with $10 bets.
+            </span>
+        </span>
+    		</div>
+		</div>
+
+	<!-- Main Container -->
     <div class="container text-center">
         <form action="/recommend" method="post" class="mb-4">
             <div class="row justify-content-center mb-3">
                 <div class="col-auto">
                     <label>Player Card 1</label><br>
-                    <input type="text" name="card1" class="form-control card-input"
-       				required pattern="^(2|3|4|5|6|7|8|9|10|A|J|Q|K)$" 
-       				title="Enter 2-10, A, J, Q, or K only">
+					<input type="text" name="card1" id="card1" class="form-control card-input"
+					    required pattern="^(2|3|4|5|6|7|8|9|10|A|J|Q|K)$"
+					    title="Enter 2-10, A, J, Q, or K only"
+					    th:value="${card1}">
                 </div>
                 <div class="col-auto">
                     <label>Player Card 2</label><br>
-                    <input type="text" name="card2" class="form-control card-input"
-       				required pattern="^(2|3|4|5|6|7|8|9|10|A|J|Q|K)$" 
-       				title="Enter 2-10, A, J, Q, or K only">
+					<input type="text" name="card2" id="card2" class="form-control card-input"
+					    required pattern="^(2|3|4|5|6|7|8|9|10|A|J|Q|K)$"
+					    title="Enter 2-10, A, J, Q, or K only"
+					    th:value="${card2}">
                 </div>
                 <div class="col-auto">
                     <label>Dealer Up Card</label><br>
-                    <input type="text" name="dealer" class="form-control card-input"
-       				required pattern="^(2|3|4|5|6|7|8|9|10|A|J|Q|K)$" 
-       				title="Enter 2-10, A, J, Q, or K only">
+					<input type="text" name="dealer" id="dealer" class="form-control card-input"
+					    required pattern="^(2|3|4|5|6|7|8|9|10|A, J, Q, or K only"
+					    th:value="${dealer}">
                 </div>
             </div>
 
             <button type="submit" class="btn btn-custom px-4 py-2">🎯 Get Recommendation</button>
         </form>
 
-        <div class="card-container mb-4">
+		<!-- Initial Cards Display -->
+        <div class="card-container mb-4" id="initialCards">
             <div class="mt-3">
                 <h5>🃏 Dealer Up Card</h5>
                 <span class="playing-card dealer-card" th:if="${dealer}" th:text="${dealer}">?</span>
             </div>
             <div>
-                <h5>🧑 Player Hand</h5>
+                <h5 id ="yourHandHeading">🧑 Player Hand</h5>
                 <span class="playing-card player-card" th:if="${card1}" th:text="${card1}">?</span>
                 <span class="playing-card player-card" th:if="${card2}" th:text="${card2}">?</span>
             </div>
         </div>
 
-        <div th:if="${move}" class="result-box">
-            <h3>📢 Recommendation: <span th:text="${move}">[Move]</span></h3>
-            <p><strong>Bust Probability:</strong> <span th:text="${bustChance}">[Chance]</span></p>
-            <p><strong>Dealer Bust Probability:</strong> <span th:text="${dealerBustChance}">[Dealer Chance]</span></p>
-            <p><strong>Dealer Makes Hand:</strong> <span th:text="${dealerMakesHandChance}">[Chance]</span></p>
-            <p><strong>Expected Value:</strong> <span th:text="${expectedValue}">[EV]</span></p>
-            <p><strong>Why:</strong> <span th:text="${explanation}">[Explanation]</span></p>
-        </div>
-    </div>
+	    <!-- Game Play Area -->	
+		<div class="container text-center mt-5">
+		    <button id="playBtn" class="btn btn-success px-4 py-2">▶ Play Hand ($10)</button>		
+		    <div id="gameArea" class="mt-4" style="display:none;">
+		        <h4 id="dealerHandHeading">Dealer Hand: <span class="hand-total-number" id="dealerTotal">0</span></h4>
+		        <div id="dealerHand"></div>
+				<!-- Player Hand 1 (hidden unless split) -->
+				<div id="playerHand1Area" style="display:none;">
+				    <h4>Your Hand 1: <span class="hand-total-number" id="playerTotal1">0</span></h4>
+				    <div id="playerHand1"></div>
+				</div>
+				<!-- Player Hand 2 (hidden unless split) -->
+				<div id="playerHand2Area" style="display:none;">
+				    <h4>Your Hand 2: <span class="hand-total-number" id="playerTotal2">0</span></h4>
+				    <div id="playerHand2"></div>
+				</div>
+				<!-- Single player hand (shown if not split) -->
+				<div id="playerHandArea">
+				    <h4>Your Hand: <span class="hand-total-number" id="playerTotal">0</span></h4>
+				    <div id="playerHand"></div>
+				</div>
 
+		        <div id="actions" class="mt-3">
+		            <button class="btn btn-primary m-1" id="hitBtn">Hit</button>
+		            <button class="btn btn-warning m-1" id="standBtn">Stand</button>
+		            <button class="btn btn-info m-1" id="doubleBtn">Double Down</button>
+		            <button class="btn btn-secondary m-1" id="splitBtn">Split</button>
+		        </div>
+		        <div id="result" class="mt-4"></div>
+		    </div>
+		</div>
+
+	    <!-- Recommendation and Statistics Display -->
+		<div th:if="${move}" class="result-box">
+		    <h3>📢 Recommendation: <span th:text="${move}">[Move]</span></h3>
+		    <p>
+		        <strong class="definition" data-definition="Chance that getting another card will result in the player's hand exceeding a value of 21.">
+		            Bust Probability:
+		        </strong> 
+		        <span th:text="${bustChance}">[Chance]</span>
+		    </p>
+		    <p>
+		        <strong class="definition" data-definition="Chance that the dealer will exceed a hand value of 21 as they continue to draw cards under 17">
+		            Dealer Bust Probability:
+		        </strong> 
+		        <span th:text="${dealerBustChance}">[Dealer Chance]</span>
+		    </p>
+		    <p>
+		        <strong class="definition" data-definition="Chance that the dealer ends with cards that add up to a value between 17-21.">
+		            Dealer Makes Hand:
+		        </strong> 
+		        <span th:text="${dealerMakesHandChance}">[Chance]</span>
+		    </p>
+		    <p>
+		        <strong class="definition" data-definition="The average expected return for this hand if the recommended move is taken (e.g. Betting $10 with an EV of 0.5 means an average return of $5).">
+		            Expected Value:
+		        </strong> 
+		        <span th:text="${expectedValue}">[EV]</span>
+		    </p>
+		    <p>
+		        <strong class="definition" data-definition="Reasoning behind the recommendation.">
+		            Why:
+		        </strong> 
+		        <span th:text="${explanation}">[Explanation]</span>
+		    </p>
+		</div>
+    </div>
+    <script th:src="@{/js/game.js}"></script>
 </body>
 </html>

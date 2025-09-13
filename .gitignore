@@ -1,33 +1,25 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# Eclipse
+*.classpath
+*.project
+*.settings/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+# Maven / Gradle build output
+/target/
+/build/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+# Compiled class files
+*.class
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Executable JARs
+*.jar
 
-### VS Code ###
+# Logs
+*.log
+
+# AWS Elastic Beanstalk local files
+.elasticbeanstalk/
+*.cfg.yml
+
+# OS / IDE specific
+.DS_Store
 .vscode/
