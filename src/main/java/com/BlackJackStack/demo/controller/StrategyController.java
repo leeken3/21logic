@@ -28,9 +28,8 @@ public class StrategyController {
      * @return the index view
      */
     @GetMapping("/")
-    public String index(Model model) {
-        model.addAttribute("appName", appName);
-        return "index";  // refers to templates/index.html
+    public String index() {
+        return "redirect:/index.html";
     }
 
     // Handle form POST request

@@ -1,7 +1,9 @@
 package com.BlackJackStack.demo.controller;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,6 +20,8 @@ import com.BlackJackStack.demo.service.StrategyService;
 @RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173", "http://127.0.0.1:4173"})
 public class ApiStrategyController {
+
+    private static final List<String> CARD_RANKS = List.of("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K");
 
     @Autowired
     private StrategyService strategyService;
@@ -43,6 +47,13 @@ public class ApiStrategyController {
         payload.put("card2", request.card2().toUpperCase());
         payload.put("dealer", request.dealer().toUpperCase());
         return payload;
+    }
+
+    /** Draws the rank used by the interactive table for a player hit. */
+    @PostMapping("/draw")
+    public Map<String, String> drawCard() {
+        String rank = CARD_RANKS.get(ThreadLocalRandom.current().nextInt(CARD_RANKS.size()));
+        return Map.of("rank", rank);
     }
 
     public record RecommendationRequest(String card1, String card2, String dealer) {}
