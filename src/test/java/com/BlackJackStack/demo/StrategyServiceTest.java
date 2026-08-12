@@ -85,7 +85,7 @@ class StrategyServiceTest {
 	    
 	    assertThat(resp.getExpectedValue()).isBetween(-1.0, 1.0);
 	    assertThat(resp.getBustPercentage()).isBetween(0.0, 1.0);
-	    assertThat(resp.getRecommendedMove()).isIn("hit", "stand", "double", "split");
+	    assertThat(resp.getRecommendedMove()).isIn("hit", "stand", "double down", "split");
 	    double sum = resp.getDealerBustPercentage() + resp.getDealerMakesHandPercentage();
 	    assertThat(sum).isCloseTo(1.0, within(0.01));
 	}

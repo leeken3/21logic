@@ -7,6 +7,9 @@ public class StrategyRequest {
     private String card1;
     private String card2;
     private String dealerCard;    
+
+    public StrategyRequest() {
+    }
     
     /** 
      * Constructor for testing purposes.
