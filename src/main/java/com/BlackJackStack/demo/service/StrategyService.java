@@ -87,10 +87,10 @@ public class StrategyService {
         if (hand.getCards().size() == 2 && hand.getCards().get(0).getRank().equals(hand.getCards().get(1).getRank())) {
             if (playerTotal == 20) 
                 return "stand"; // Pair of 10s
-            else if (playerTotal == 22) 
+            else if (hand.getCards().get(0).getRank().equals("A"))
                 return "split"; // Pair of Aces
             else if (playerTotal == 18)
-                if (dealerValue == 7 || dealerValue == 10 || dealerValue == 11) // Ace
+                if (dealerValue == 7 || dealerValue == 10)
                     return "stand";
                 else 
                     return "split"; // Pair of 9s
