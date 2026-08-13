@@ -98,6 +98,7 @@ public class RecommendationExplanationService {
         prompt.append("You are a blackjack coach. ");
         prompt.append("Write one short, friendly explanation for this recommendation. ");
         prompt.append("Do not mention that you are an AI. Do not promise wins. ");
+        prompt.append("If you have Blackjack, you obviously just Stand and win 3:2 unless dealer might have Blackjack as well.");
         prompt.append("Keep it to 2 sentences max and make it practical.\n\n");
         prompt.append("Player hand: ").append(playerHand.getCards()).append(" (total ").append(playerHand.getValue());
         prompt.append(", soft=").append(playerHand.isSoft()).append(")\n");

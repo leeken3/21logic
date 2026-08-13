@@ -26,6 +26,16 @@ const suitColors = {
 }
 const deckValues = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 const TABLE_BET = 10
+const SPLIT_RIGHT = 1
+const SPLIT_LEFT = 0
+const emptyResult = {
+  recommendedMove: '',
+  bustPercentage: null,
+  dealerBustPercentage: null,
+  dealerMakesHandPercentage: null,
+  expectedValue: null,
+  explanation: '',
+}
 
 function normalizeCard(value) {
   const cleaned = value?.toString().trim().toUpperCase()
@@ -73,6 +83,19 @@ function getHandTotal(cards) {
   return total
 }
 
+function isBlackjack(cards) {
+  if (!cards || cards.length !== 2) return false
+
+  const values = cards.map((card) =>
+      normalizeCard(card && typeof card === 'object' ? card.value : card),
+  )
+
+  const hasAce = values.includes('A')
+  const hasTenValue = values.some((value) => ['10', 'J', 'Q', 'K'].includes(value))
+
+  return hasAce && hasTenValue
+}
+
 function getDisplayedPlayerTotal(cards) {
   const total = getHandTotal(cards)
   const aceCount = cards.filter((rawCard) => normalizeCard(rawCard && typeof rawCard === 'object' ? rawCard.value : rawCard) === 'A').length
@@ -85,11 +108,35 @@ function getDisplayedPlayerTotal(cards) {
   }, 0)
   const softTotal = aceCount > 0 ? hardTotal + 10 : hardTotal
 
-  // A blackjack is always displayed as its winning total, not as 11 / 21.
   if (total === 21 || aceCount === 0) return `${total}`
-
-  // Once the 11-value Ace would put the hand above 21, only the hard total applies.
   return softTotal <= 21 ? `${hardTotal} / ${softTotal}` : `${total}`
+}
+
+function formatMoney(amount) {
+  if (amount > 0) return `+$${amount}`
+  if (amount < 0) return `-$${Math.abs(amount)}`
+  return '$0'
+}
+
+function scoreSplitHand(cards, dealerTotal, bet) {
+  const playerTotal = getHandTotal(cards)
+  if (playerTotal > 21) {
+    return { summary: `busts with ${playerTotal}`, net: -bet }
+  }
+  if (dealerTotal > 21) {
+    return { summary: `wins ${playerTotal} (dealer bust)`, net: bet }
+  }
+  if (playerTotal > dealerTotal) {
+    return { summary: `wins ${playerTotal} to ${dealerTotal}`, net: bet }
+  }
+  if (playerTotal === dealerTotal) {
+    return { summary: `pushes at ${playerTotal}`, net: 0 }
+  }
+  return { summary: `loses ${playerTotal} to ${dealerTotal}`, net: -bet }
+}
+
+function splitHandLabel(index) {
+  return index === SPLIT_RIGHT ? 'Right hand' : 'Left hand'
 }
 
 function getCardFace(value, index) {
@@ -143,19 +190,16 @@ function App() {
   const [lastDrawnCard, setLastDrawnCard] = useState(null)
   const [handMessage, setHandMessage] = useState('Ready for the next hand.')
   const [bet, setBet] = useState(TABLE_BET)
-  const [result, setResult] = useState({
-    recommendedMove: '',
-    bustPercentage: null,
-    dealerBustPercentage: null,
-    dealerMakesHandPercentage: null,
-    expectedValue: null,
-    explanation: '',
-  })
+  const [result, setResult] = useState(emptyResult)
   const [loading, setLoading] = useState(false)
   const [inputWarning, setInputWarning] = useState('')
   const [handComplete, setHandComplete] = useState(false)
+  const [playerBlackjack, setPlayerBlackjack] = useState(false)
+  const [splitMode, setSplitMode] = useState(false)
+  const [splitHands, setSplitHands] = useState([])
+  const [activeSplitIndex, setActiveSplitIndex] = useState(null)
+  const [splitAceMode, setSplitAceMode] = useState(false)
 
-  // Flip animation flags for when inputs become valid
   const [flipPlayer1, setFlipPlayer1] = useState(false)
   const [flipPlayer2, setFlipPlayer2] = useState(false)
   const [flipDealer, setFlipDealer] = useState(false)
@@ -165,6 +209,10 @@ function App() {
   const hasStartedRef = useRef(false)
   const betRef = useRef(TABLE_BET)
   const actionLockRef = useRef(false)
+  const splitModeRef = useRef(false)
+  const splitHandsRef = useRef([])
+  const activeSplitIndexRef = useRef(null)
+  const splitAceModeRef = useRef(false)
 
   const syncPlayerHand = (cards) => {
     playerHandRef.current = cards
@@ -176,6 +224,26 @@ function App() {
     dealerHandRef.current = cards
     setDealerHand(cards)
     setResolvedDealerHand(cards)
+  }
+
+  const syncSplitHands = (hands) => {
+    splitHandsRef.current = hands
+    setSplitHands(hands)
+  }
+
+  const setActiveSplit = (index) => {
+    activeSplitIndexRef.current = index
+    setActiveSplitIndex(index)
+  }
+
+  const setSplitEnabled = (enabled) => {
+    splitModeRef.current = enabled
+    setSplitMode(enabled)
+  }
+
+  const setSplitAceEnabled = (enabled) => {
+    splitAceModeRef.current = enabled
+    setSplitAceMode(enabled)
   }
 
   const handleChange = (event) => {
@@ -205,7 +273,6 @@ function App() {
     return toCardObject(value, index)
   }
 
-  // When an input transitions from empty -> valid, briefly trigger a flip animation
   useEffect(() => {
     const prev = prevFormRef.current || { card1: '', card2: '', dealer: '' }
 
@@ -225,10 +292,7 @@ function App() {
     prevFormRef.current = { ...formData }
   }, [formData.card1, formData.card2, formData.dealer])
 
-  const resolveDealerRound = async (playerCards, dealerCards, currentBet) => {
-    // Keep the finished player hand visible while the dealer plays out.
-    syncPlayerHand(playerCards)
-
+  const playDealerHand = async (dealerCards) => {
     let nextDealerCards = [...dealerCards]
     dealerHandRef.current = nextDealerCards
     setDealerHand(nextDealerCards)
@@ -246,10 +310,28 @@ function App() {
       dealerTotal = getHandTotal(nextDealerCards)
     }
 
+    syncDealerHand(nextDealerCards)
+    return nextDealerCards
+  }
+
+  const resolveDealerRound = async (playerCards, dealerCards, currentBet) => {
+    syncPlayerHand(playerCards)
+    const nextDealerCards = await playDealerHand(dealerCards)
+    const dealerTotal = getHandTotal(nextDealerCards)
     const playerTotal = getHandTotal(playerCards)
+    const playerHasBlackjack = isBlackjack(playerCards)
+    const dealerHasBlackjack = isBlackjack(nextDealerCards)
+
     let outcome = ''
 
-    if (playerTotal > 21) {
+    if (playerHasBlackjack && dealerHasBlackjack) {
+      outcome = `Push. Both player and dealer have Blackjack. Bet returned.`
+    } else if (playerHasBlackjack) {
+      const blackjackPayout = currentBet * 1.5
+      outcome = `Blackjack! You win 3:2. +$${blackjackPayout.toFixed(2)}.`
+    } else if (dealerHasBlackjack) {
+      outcome = `Dealer has Blackjack. You lose -$${currentBet}.`
+    } else if (playerTotal > 21) {
       outcome = `Bust! Dealer reveals ${nextDealerCards[1]?.value || dealerCards[1]?.value || 'hidden'} and totals ${dealerTotal}. You lose -$${currentBet}.`
     } else if (dealerTotal > 21) {
       outcome = `Dealer busts with ${dealerTotal}. You win +$${currentBet}.`
@@ -262,12 +344,146 @@ function App() {
     }
 
     syncPlayerHand(playerCards)
-    syncDealerHand(nextDealerCards)
     setHandMessage(outcome)
     hasStartedRef.current = false
     setHasStarted(false)
     setHandComplete(true)
     setSelectedAction('Hit')
+  }
+
+  const resolveSplitRound = async (hands, dealerCards) => {
+    const nextDealerCards = await playDealerHand(dealerCards)
+    const dealerTotal = getHandTotal(nextDealerCards)
+    const right = scoreSplitHand(hands[SPLIT_RIGHT].cards, dealerTotal, hands[SPLIT_RIGHT].bet)
+    const left = scoreSplitHand(hands[SPLIT_LEFT].cards, dealerTotal, hands[SPLIT_LEFT].bet)
+    const net = right.net + left.net
+
+    setHandMessage(
+        `${splitHandLabel(SPLIT_RIGHT)} ${right.summary} (${formatMoney(right.net)}). ` +
+        `${splitHandLabel(SPLIT_LEFT)} ${left.summary} (${formatMoney(left.net)}). ` +
+        `Net ${formatMoney(net)}.`,
+    )
+
+    setSplitAceEnabled(false)
+    setActiveSplit(null)
+    hasStartedRef.current = false
+    setHasStarted(false)
+    setHandComplete(true)
+    setSelectedAction('Hit')
+  }
+
+  const dealToSplitHand = async (hands, handIndex) => {
+    const hand = hands[handIndex]
+    const nextCard = await drawPlayerCard(hand.cards.length + handIndex * 4)
+    const nextHands = hands.map((entry, index) => (
+      index === handIndex
+        ? { ...entry, cards: [...entry.cards, nextCard] }
+        : entry
+    ))
+    syncSplitHands(nextHands)
+    setLastDrawnCard({ side: 'player', handIndex, key: Date.now() })
+    setHandMessage(`${splitHandLabel(handIndex)} receives ${nextCard.value}${nextCard.suit}.`)
+    await pause(420)
+    return nextHands
+  }
+
+  const resolveSplitAces = async (initialHands, dealerCards) => {
+    let hands = initialHands
+
+    // Right hand gets exactly one card automatically
+    setActiveSplit(SPLIT_RIGHT)
+    setHandMessage('Split aces: dealing to the right hand...')
+    await pause(350)
+
+    try {
+      hands = await dealToSplitHand(hands, SPLIT_RIGHT)
+    } catch (error) {
+      console.error(error)
+      setHandMessage('Unable to draw a card from the strategy engine. Try again in a moment.')
+      return
+    }
+
+    await pause(450)
+
+    // Left hand gets exactly one card automatically
+    setActiveSplit(SPLIT_LEFT)
+    setHandMessage('Split aces: dealing to the left hand...')
+    await pause(350)
+
+    try {
+      hands = await dealToSplitHand(hands, SPLIT_LEFT)
+    } catch (error) {
+      console.error(error)
+      setHandMessage('Unable to draw a card from the strategy engine. Try again in a moment.')
+      return
+    }
+
+    await pause(500)
+
+    // Both ace hands are complete
+    hands = hands.map((hand) => ({
+      ...hand,
+      complete: true,
+    }))
+
+    syncSplitHands(hands)
+    setActiveSplit(null)
+
+    setHandMessage('Split aces complete. Dealer reveals and plays.')
+    await pause(500)
+
+    await resolveSplitRound(hands, dealerCards)
+  }
+
+  const beginSplitHand = async (hands, handIndex) => {
+    setActiveSplit(handIndex)
+    setHandMessage(`Playing ${splitHandLabel(handIndex).toLowerCase()}.`)
+    await pause(280)
+
+    let nextHands
+    try {
+      nextHands = await dealToSplitHand(hands, handIndex)
+    } catch (error) {
+      console.error(error)
+      setHandMessage('Unable to draw a card from the strategy engine. Try again in a moment.')
+      return null
+    }
+
+    const total = getHandTotal(nextHands[handIndex].cards)
+    if (total >= 21) {
+      nextHands = nextHands.map((entry, index) => (
+        index === handIndex ? { ...entry, complete: true } : entry
+      ))
+      syncSplitHands(nextHands)
+      setHandMessage(
+        total > 21
+          ? `${splitHandLabel(handIndex)} busts with ${total}.`
+          : `${splitHandLabel(handIndex)} reaches ${total}.`,
+      )
+      await pause(450)
+      return { hands: nextHands, autoComplete: true }
+    }
+
+    setHandMessage(`${splitHandLabel(handIndex)} total is ${total}. Make your move.`)
+    return { hands: nextHands, autoComplete: false }
+  }
+
+  const advanceAfterSplitHand = async (hands, finishedIndex) => {
+    const nextHands = hands.map((entry, index) => (
+      index === finishedIndex ? { ...entry, complete: true } : entry
+    ))
+    syncSplitHands(nextHands)
+
+    if (finishedIndex === SPLIT_RIGHT) {
+      const leftResult = await beginSplitHand(nextHands, SPLIT_LEFT)
+      if (!leftResult) return
+      if (leftResult.autoComplete) {
+        await resolveSplitRound(leftResult.hands, dealerHandRef.current)
+      }
+      return
+    }
+
+    await resolveSplitRound(nextHands, dealerHandRef.current)
   }
 
   const resetTableHands = () => {
@@ -279,12 +495,17 @@ function App() {
     setResolvedDealerHand([])
     setDealerHidden(true)
     setLastDrawnCard(null)
+    setPlayerBlackjack(false)
     hasStartedRef.current = false
     setHasStarted(false)
     betRef.current = TABLE_BET
     setBet(TABLE_BET)
     setSelectedAction('Hit')
     actionLockRef.current = false
+    setSplitEnabled(false)
+    setSplitAceEnabled(false)
+    syncSplitHands([])
+    setActiveSplit(null)
   }
 
   const handleReplayHand = () => {
@@ -302,14 +523,7 @@ function App() {
     resetTableHands()
     setHandComplete(false)
     setFormData(defaultForm)
-    setResult({
-      recommendedMove: '',
-      bustPercentage: null,
-      dealerBustPercentage: null,
-      dealerMakesHandPercentage: null,
-      expectedValue: null,
-      explanation: '',
-    })
+    setResult(emptyResult)
     setInputWarning('')
     setFlipPlayer1(false)
     setFlipPlayer2(false)
@@ -320,12 +534,19 @@ function App() {
 
   const handleActionSelect = async (label) => {
     if (handComplete) return
+    if (splitAceModeRef.current) return
+    if (startingPlayerHasBlackjack && label !== 'Stand') return
+
     if (!canSubmit) {
       setHandMessage('Enter both player cards and the dealer up card before starting a hand.')
       return
     }
-    if (label === 'Split' && !isSplitAvailable) return
-    if (label === 'Double Down' && hasStartedRef.current) return
+    if (label === 'Split' && (!isSplitAvailable || splitModeRef.current)) return
+    if (label === 'Double Down' && hasStartedRef.current && !splitModeRef.current) return
+    if (label === 'Double Down' && splitModeRef.current) {
+      const active = splitHandsRef.current[activeSplitIndexRef.current]
+      if (!active || active.complete || active.cards.length !== 2) return
+    }
     if (actionLockRef.current) return
 
     actionLockRef.current = true
@@ -341,6 +562,8 @@ function App() {
         : [toCardObject(formData.dealer, 0), randomCard(1)]
 
       if (!roundAlreadyStarted) {
+        const startingPlayerHasBlackjack = isBlackjack(startingPlayer)
+
         syncPlayerHand(startingPlayer)
         syncDealerHand(startingDealer)
         setDealerHidden(true)
@@ -349,11 +572,138 @@ function App() {
         setHandComplete(false)
         betRef.current = TABLE_BET
         setBet(TABLE_BET)
-        setHandMessage('Round started. Make your move.')
+        setPlayerBlackjack(startingPlayerHasBlackjack)
+
+        if (startingPlayerHasBlackjack && label !== 'Split') {
+          setSelectedAction('Stand')
+          setHandMessage('Blackjack! Dealer must reveal their hand. Click STAND to continue.')
+        } else if (label !== 'Split') {
+          setHandMessage('Round started. Make your move.')
+        }
       }
 
       const playerCards = [...(roundAlreadyStarted ? playerHandRef.current : startingPlayer)]
       const dealerCards = [...(roundAlreadyStarted ? dealerHandRef.current : startingDealer)]
+
+      if (label === 'Split') {
+        const leftCard = playerCards[0] || toCardObject(formData.card1, 0)
+        const rightCard = playerCards[1] || toCardObject(formData.card2, 1)
+
+        if (!leftCard || !rightCard || normalizeCard(leftCard.value) !== normalizeCard(rightCard.value)) {
+          setHandMessage('Split is only available when both cards match.')
+          return
+        }
+
+        const isSplitAces = normalizeCard(leftCard.value) === 'A'
+
+        const initialHands = [
+          { cards: [leftCard], bet: TABLE_BET, complete: false },
+          { cards: [rightCard], bet: TABLE_BET, complete: false },
+        ]
+
+        setSplitEnabled(true)
+        setSplitAceEnabled(isSplitAces)
+        syncSplitHands(initialHands)
+        syncPlayerHand([leftCard, rightCard])
+
+        if (isSplitAces) {
+          setHandMessage('Split aces. Each hand receives one card automatically.')
+          await pause(400)
+
+          await resolveSplitAces(initialHands, dealerCards)
+          return
+        }
+
+        setHandMessage(`Split into two $${TABLE_BET} hands. Playing the right hand first.`)
+        await pause(350)
+
+        const rightResult = await beginSplitHand(initialHands, SPLIT_RIGHT)
+
+        if (!rightResult) return
+
+        if (rightResult.autoComplete) {
+          await advanceAfterSplitHand(rightResult.hands, SPLIT_RIGHT)
+        }
+
+        return
+      }
+
+      if (splitModeRef.current) {
+        const handIndex = activeSplitIndexRef.current
+        if (handIndex === null) return
+        let hands = [...splitHandsRef.current]
+        const activeHand = hands[handIndex]
+        if (!activeHand || activeHand.complete) return
+
+        if (label === 'Hit') {
+          let nextCard
+          try {
+            nextCard = await drawPlayerCard(activeHand.cards.length + handIndex * 4)
+          } catch (error) {
+            console.error(error)
+            setHandMessage('Unable to draw a card from the strategy engine. Try again in a moment.')
+            return
+          }
+
+          hands = hands.map((entry, index) => (
+            index === handIndex
+              ? { ...entry, cards: [...entry.cards, nextCard] }
+              : entry
+          ))
+          syncSplitHands(hands)
+          setLastDrawnCard({ side: 'player', handIndex, key: Date.now() })
+          await pause(420)
+
+          const total = getHandTotal(hands[handIndex].cards)
+          if (total >= 21) {
+            setHandMessage(
+              total > 21
+                ? `${splitHandLabel(handIndex)} hits for ${nextCard.value}${nextCard.suit} and busts with ${total}.`
+                : `${splitHandLabel(handIndex)} hits for ${nextCard.value}${nextCard.suit} and reaches ${total}.`,
+            )
+            await pause(400)
+            await advanceAfterSplitHand(hands, handIndex)
+            return
+          }
+
+          setHandMessage(`${splitHandLabel(handIndex)} hits for ${nextCard.value}${nextCard.suit}. Total is ${total}.`)
+          return
+        }
+
+        if (label === 'Stand') {
+          const total = getHandTotal(activeHand.cards)
+          setHandMessage(`${splitHandLabel(handIndex)} stands with ${total}.`)
+          await pause(350)
+          await advanceAfterSplitHand(hands, handIndex)
+          return
+        }
+
+        if (label === 'Double Down') {
+          let nextCard
+          try {
+            nextCard = await drawPlayerCard(activeHand.cards.length + handIndex * 4)
+          } catch (error) {
+            console.error(error)
+            setHandMessage('Unable to draw a card from the strategy engine. Try again in a moment.')
+            return
+          }
+
+          hands = hands.map((entry, index) => (
+            index === handIndex
+              ? { ...entry, cards: [...entry.cards, nextCard], bet: entry.bet * 2 }
+              : entry
+          ))
+          syncSplitHands(hands)
+          setLastDrawnCard({ side: 'player', handIndex, key: Date.now() })
+          const total = getHandTotal(hands[handIndex].cards)
+          setHandMessage(`${splitHandLabel(handIndex)} doubles for ${nextCard.value}${nextCard.suit}. Total ${total}.`)
+          await pause(420)
+          await advanceAfterSplitHand(hands, handIndex)
+          return
+        }
+
+        return
+      }
 
       if (label === 'Hit') {
         let nextCard
@@ -403,23 +753,6 @@ function App() {
         setHandMessage(`Double down: ${nextCard.value}${nextCard.suit}.`)
         await pause(420)
         await resolveDealerRound(nextPlayerCards, dealerCards, doubledBet)
-        return
-      }
-
-      if (label === 'Split') {
-        const firstCard = normalizeCard(formData.card1)
-        const secondCard = normalizeCard(formData.card2)
-        if (firstCard !== secondCard) {
-          setHandMessage('Split is only available when both cards match.')
-          return
-        }
-
-        const splitText = `Split selected: ${firstCard} and ${secondCard} are matched. Each hand plays as a $${TABLE_BET} bet.`
-        setHandMessage(splitText)
-        hasStartedRef.current = false
-        setHasStarted(false)
-        setHandComplete(false)
-        setSelectedAction('Hit')
       }
     } finally {
       actionLockRef.current = false
@@ -465,7 +798,6 @@ function App() {
   }
 
   const moveLabel = result.recommendedMove?.toUpperCase() || ''
-  const hasValidInput = Boolean(formData.card1) && Boolean(formData.card2) && Boolean(formData.dealer)
   const activePlayerHand = playerHand.length >= resolvedPlayerHand.length ? playerHand : resolvedPlayerHand
   const activeDealerHand = dealerHand.length >= resolvedDealerHand.length ? dealerHand : resolvedDealerHand
   const playerCardsToRender = (hasStarted || handComplete || activePlayerHand.length > 0)
@@ -474,14 +806,66 @@ function App() {
   const dealerCardsToRender = (hasStarted || handComplete || activeDealerHand.length > 0 || !dealerHidden)
     ? activeDealerHand
     : [formData.dealer ? toCardObject(formData.dealer, 0) : null, null]
-  const playerTotal = playerCardsToRender.some(Boolean) ? getDisplayedPlayerTotal(playerCardsToRender.filter(Boolean)) : null
+  const playerTotal = playerCardsToRender.some(Boolean)
+      ? isBlackjack(playerCardsToRender.filter(Boolean))
+          ? 'BJ'
+          : getDisplayedPlayerTotal(playerCardsToRender.filter(Boolean))
+      : null
   const dealerCardsForTotal = dealerHidden ? dealerCardsToRender.slice(0, 1) : dealerCardsToRender
   const dealerTotal = dealerCardsForTotal.some(Boolean) ? getHandTotal(dealerCardsForTotal.filter(Boolean)) : null
-  const isSplitAvailable = normalizeCard(formData.card1) === normalizeCard(formData.card2) && Boolean(formData.card1) && Boolean(formData.card2)
-  const playerHasTwentyOne = hasStarted && getHandTotal(playerHand) >= 21
-  const canDoubleDown = !hasStarted && !handComplete
-  const canSubmit = [...[formData.card1, formData.card2, formData.dealer]].every((value) => Boolean(value) && isValidCardValue(value))
-  const actionsDisabled = handComplete
+  const isPair = normalizeCard(formData.card1) === normalizeCard(formData.card2) && Boolean(formData.card1) && Boolean(formData.card2)
+
+  const startingPlayerCards = [
+    formData.card1 ? toCardObject(formData.card1, 0) : null,
+    formData.card2 ? toCardObject(formData.card2, 1) : null,
+  ].filter(Boolean)
+
+  const startingPlayerHasBlackjack = isBlackjack(startingPlayerCards)
+  const isSplitAvailable =
+      isPair &&
+      !playerBlackjack &&
+      !splitMode &&
+      (!hasStarted || playerHand.length === 2)
+  const activeSplitHand = splitMode && activeSplitIndex !== null ? splitHands[activeSplitIndex] : null
+  const playerHasTwentyOne = splitMode
+    ? Boolean(activeSplitHand && getHandTotal(activeSplitHand.cards) >= 21)
+    : hasStarted && getHandTotal(playerHand) >= 21
+  const canDoubleDown = splitMode
+      ? Boolean(activeSplitHand && !activeSplitHand.complete && activeSplitHand.cards.length === 2)
+      : (!hasStarted && !handComplete && !startingPlayerHasBlackjack)
+  const canSubmit = [formData.card1, formData.card2, formData.dealer].every((value) => Boolean(value) && isValidCardValue(value))
+  const actionsDisabled = handComplete || splitAceMode
+  const showSplitBoard = splitMode && splitHands.length === 2
+
+  const renderSplitHand = (handIndex) => {
+    const hand = splitHands[handIndex]
+    if (!hand) return null
+    const isActive = activeSplitIndex === handIndex && !handComplete
+    const total = hand.cards.length ? getDisplayedPlayerTotal(hand.cards) : ''
+
+    return (
+      <div className={`split-hand ${isActive ? 'is-active' : ''} ${hand.complete ? 'is-complete' : ''}`}>
+        <div className="split-hand-label">
+          <span>{handIndex === SPLIT_RIGHT ? 'Right' : 'Left'}</span>
+          <span className="split-hand-bet">${hand.bet}</span>
+        </div>
+        <div className="board-cards split-hand-cards">
+          {hand.cards.map((card, index) => (
+            <CardSlot
+              key={`split-${handIndex}-${index}`}
+              value={card}
+              index={handIndex * 4 + index + 2}
+              hidden={!card}
+              animate={lastDrawnCard?.side === 'player' && lastDrawnCard?.handIndex === handIndex && index === hand.cards.length - 1}
+            />
+          ))}
+        </div>
+        <div className={`meta-score split-hand-score ${String(total).includes('/') ? 'soft-total' : ''}`}>
+          {total}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app-shell">
@@ -521,27 +905,37 @@ function App() {
             </div>
           </div>
 
-          <div className="player-row">
-            <div className="board-cards">
-              {playerCardsToRender.map((card, index) => (
-                <CardSlot
-                  key={`player-${index}`}
-                  value={card}
-                  index={index + 2}
-                  hidden={!card}
-                  animate={
-                    (index === 0 && flipPlayer1) ||
-                    (index === 1 && flipPlayer2) ||
-                    (lastDrawnCard?.side === 'player' && index === playerCardsToRender.length - 1)
-                  }
-                />
-              ))}
-            </div>
+          <div className={`player-row ${showSplitBoard ? 'is-split' : ''}`}>
+            {showSplitBoard ? (
+              <div className="split-board">
+                {renderSplitHand(SPLIT_LEFT)}
+                <div className="split-divider" aria-hidden="true" />
+                {renderSplitHand(SPLIT_RIGHT)}
+              </div>
+            ) : (
+              <>
+                <div className="board-cards">
+                  {playerCardsToRender.map((card, index) => (
+                    <CardSlot
+                      key={`player-${index}`}
+                      value={card}
+                      index={index + 2}
+                      hidden={!card}
+                      animate={
+                        (index === 0 && flipPlayer1) ||
+                        (index === 1 && flipPlayer2) ||
+                        (lastDrawnCard?.side === 'player' && lastDrawnCard?.handIndex == null && index === playerCardsToRender.length - 1)
+                      }
+                    />
+                  ))}
+                </div>
 
-            <div className="board-meta player-meta">
-              <div className={`meta-score ${playerTotal?.includes('/') ? 'soft-total' : ''}`}>{playerTotal || ''}</div>
-              <div className="meta-name">Player</div>
-            </div>
+                <div className="board-meta player-meta">
+                  <div className={`meta-score ${playerTotal?.includes('/') ? 'soft-total' : ''}`}>{playerTotal || ''}</div>
+                  <div className="meta-name">Player</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -550,7 +944,12 @@ function App() {
             const isSplit = label === 'Split'
             const isDoubleDown = label === 'Double Down'
             const isHit = label === 'Hit'
-            const disabled = actionsDisabled || !canSubmit || (isSplit && !isSplitAvailable) || (isDoubleDown && !canDoubleDown) || (isHit && playerHasTwentyOne)
+            const disabled = actionsDisabled
+                || !canSubmit
+                || (startingPlayerHasBlackjack && label !== 'Stand')
+                || (isSplit && !isSplitAvailable)
+                || (isDoubleDown && !canDoubleDown)
+                || (isHit && playerHasTwentyOne)
             const isSelected = selectedAction === label && !disabled
 
             return (
