@@ -19,6 +19,9 @@ import com.BlackJackStack.demo.service.StrategyService;
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173", "http://127.0.0.1:4173"})
+/**
+ * Controller for handling API requests related to blackjack strategy recommendations and explanations.
+ */
 public class ApiStrategyController {
 
     private static final List<String> CARD_RANKS = List.of("A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K");
@@ -26,6 +29,11 @@ public class ApiStrategyController {
     @Autowired
     private StrategyService strategyService;
 
+    /**
+     * Provides a recommendation for the next move based on the player's hand and the dealer's upcard.
+     * @param request
+     * @return
+     */
     @PostMapping("/recommend")
     public Map<String, Object> recommend(@RequestBody RecommendationRequest request) {
         StrategyRequest strategyRequest = new StrategyRequest(
@@ -49,6 +57,25 @@ public class ApiStrategyController {
         return payload;
     }
 
+    /**
+     * Generates an explanation for a given strategy decision.
+     * @param request
+     * @return
+     */
+    @PostMapping("/strategy-explanation")
+    public Map<String, String> strategyExplanation(
+            @RequestBody StrategyExplanationRequest request
+    ) {
+        String explanation = strategyService.generateStrategyBoardExplanation(
+                request.decision(),
+                request.hand(),
+                request.dealer(),
+                request.strategyType()
+        );
+
+        return Map.of("explanation", explanation);
+    }
+
     /** Draws the rank used by the interactive table for a player hit. */
     @PostMapping("/draw")
     public Map<String, String> drawCard() {
@@ -56,5 +83,25 @@ public class ApiStrategyController {
         return Map.of("rank", rank);
     }
 
+    /**
+     * Request body for the /recommend endpoint.
+     * @param card1
+     * @param card2
+     * @param dealer
+     */
     public record RecommendationRequest(String card1, String card2, String dealer) {}
+
+    /**
+     * Request body for the /strategy-explanation endpoint.
+     * @param decision
+     * @param hand
+     * @param dealer
+     * @param strategyType
+     */
+    public record StrategyExplanationRequest(
+            String decision,
+            String hand,
+            String dealer,
+            String strategyType
+    ) {}
 }

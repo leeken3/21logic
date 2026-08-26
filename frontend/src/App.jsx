@@ -3,27 +3,19 @@ import './App.css'
 
 import {
   getRecommendation,
-  drawCard,
 } from './services/blackjackApi'
 
 import {
   normalizeCard,
   isValidCardValue,
   toCardObject,
-  randomCard,
   getHandTotal,
   isBlackjack,
   getDisplayedPlayerTotal,
-  formatMoney,
-  scoreSplitHand,
-  splitHandLabel,
-  getCardFace,
 } from './utils/blackjack'
 
 import { useBlackjackGame } from './hooks/useBlackjackGame'
 
-import CardSlot from './components/CardSlot'
-import SplitHand from './components/SplitHand'
 import ActionBar from './components/ActionBar'
 import RecommendationPanel from './components/RecommendationPanel'
 import CardInputForm from './components/CardInputForm'
@@ -37,18 +29,6 @@ const defaultForm = {
   dealer: '',
 }
 
-const validCardValues = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-const suitOrder = ['♣', '♦', '♥', '♠']
-const suitColors = {
-  '♥': '#d9305d',
-  '♦': '#d9305d',
-  '♣': '#111827',
-  '♠': '#111827',
-}
-const deckValues = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-const TABLE_BET = 10
-const SPLIT_RIGHT = 1
-const SPLIT_LEFT = 0
 const emptyResult = {
   recommendedMove: '',
   bustPercentage: null,
@@ -58,6 +38,11 @@ const emptyResult = {
   explanation: '',
 }
 
+/**
+ * Main application component for the Blackjack strategy tool.
+ * @returns {React.JSX.Element}
+ * @constructor
+ */
 function App() {
   const {
     playerHand,
@@ -66,50 +51,20 @@ function App() {
     resolvedPlayerHand,
     resolvedDealerHand,
 
-    setPlayerHand,
-    setDealerHand,
-    setResolvedPlayerHand,
-    setResolvedDealerHand,
-
-    syncPlayerHand,
-    syncDealerHand,
-
-    playerHandRef,
-    dealerHandRef,
-
     splitMode,
     splitHands,
     activeSplitIndex,
     splitAceMode,
 
     selectedAction,
-    setSelectedAction,
-
-    syncSplitHands,
-    setActiveSplit,
-    setSplitEnabled,
-    setSplitAceEnabled,
-
-    splitModeRef,
-    splitHandsRef,
-    activeSplitIndexRef,
-    splitAceModeRef,
 
     handComplete,
     hasStarted,
     handMessage,
-    bet,
     lastDrawnCard,
     playerBlackjack,
 
     // Game logic
-    playDealerHand,
-    resolveDealerRound,
-    resolveSplitRound,
-    dealToSplitHand,
-    resolveSplitAces,
-    beginSplitHand,
-    advanceAfterSplitHand,
     handleActionSelect,
     resetGame,
     replayGame,
@@ -126,9 +81,6 @@ function App() {
   const [flipPlayer2, setFlipPlayer2] = useState(false)
   const [flipDealer, setFlipDealer] = useState(false)
   const prevFormRef = useRef(defaultForm)
-  const hasStartedRef = useRef(false)
-  const betRef = useRef(TABLE_BET)
-  const actionLockRef = useRef(false)
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -142,20 +94,6 @@ function App() {
 
     setInputWarning('')
     setFormData((current) => ({ ...current, [name]: nextValue }))
-  }
-
-  const pause = (duration) => new Promise((resolve) => setTimeout(resolve, duration))
-
-  const drawPlayerCard = async (index) => {
-    const payload = await drawCard()
-
-    const value = normalizeCard(payload.rank)
-
-    if (!isValidCardValue(value)) {
-      throw new Error('Strategy engine returned an invalid card')
-    }
-
-    return toCardObject(value, index)
   }
 
   useEffect(() => {
@@ -176,35 +114,6 @@ function App() {
 
     prevFormRef.current = { ...formData }
   }, [formData.card1, formData.card2, formData.dealer])
-
-  const resetTableHands = () => {
-    playerHandRef.current = []
-    dealerHandRef.current = []
-
-    setPlayerHand([])
-    setDealerHand([])
-    setResolvedPlayerHand([])
-    setResolvedDealerHand([])
-
-    setDealerHidden(true)
-
-    setLastDrawnCard(null)
-    setPlayerBlackjack(false)
-
-    hasStartedRef.current = false
-    setHasStarted(false)
-
-    betRef.current = TABLE_BET
-    setBet(TABLE_BET)
-
-    setSelectedAction('Hit')
-    actionLockRef.current = false
-
-    setSplitEnabled(false)
-    setSplitAceEnabled(false)
-    syncSplitHands([])
-    setActiveSplit(null)
-  }
 
   const handleReplayHand = () => {
     if (!canSubmit) return

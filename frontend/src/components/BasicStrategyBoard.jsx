@@ -1,3 +1,8 @@
+import { useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { getStrategyExplanation } from '../services/blackjackApi'
+
+
 const dealerColumns = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'A']
 
 const hardRows = [
@@ -43,6 +48,11 @@ const surrenderRows = [
     ['14', '', '', '', '', '', '', '', '', '', ''],
 ]
 
+/**
+ * Function to determine the CSS class for a strategy table cell based on its value.
+ * @param value
+ * @returns {string}
+ */
 function cellClass(value) {
     switch (value) {
         case 'H':
@@ -66,7 +76,18 @@ function cellClass(value) {
     }
 }
 
-function StrategyTable({ title, sideLabel, rows }) {
+/**
+ * Component to render a strategy table for blackjack.
+ * @param param0
+ * @param param0.title
+ * @param param0.sideLabel
+ * @param param0.rows
+ * @param param0.strategyType
+ * @param param0.onCellHover
+ * @returns {React.JSX.Element}
+ * @constructor
+ */
+function StrategyTable({ title, sideLabel, rows, strategyType, onCellHover }) {
     return (
         <section className="strategy-section">
             <div className="strategy-side-label">
@@ -97,6 +118,16 @@ function StrategyTable({ title, sideLabel, rows }) {
                                 <td
                                     key={`${row[0]}-${dealerColumns[index]}`}
                                     className={cellClass(value)}
+                                    onMouseEnter={(event) =>
+                                        onCellHover({
+                                            hand: row[0],
+                                            dealer: dealerColumns[index],
+                                            decision: value,
+                                            type: strategyType,
+                                            rect: event.currentTarget.getBoundingClientRect(),
+                                        })
+                                    }
+                                    onMouseLeave={() => onCellHover(null)}
                                 >
                                     {value}
                                 </td>
@@ -110,25 +141,194 @@ function StrategyTable({ title, sideLabel, rows }) {
     )
 }
 
+/**
+ * Component to render the basic strategy board for blackjack, including hard totals, soft totals, pair splitting, and surrender strategies.
+ * @returns {React.JSX.Element}
+ * @constructor
+ */
 function BasicStrategyBoard() {
+
+    const [hoveredCell, setHoveredCell] = useState(null)
+    const [aiExplanation, setAiExplanation] = useState('')
+    const [aiLoading, setAiLoading] = useState(false)
+    const [aiError, setAiError] = useState('')
+
+    const explanationCache = useRef(new Map())
+    const requestIdRef = useRef(0)
+
+    const handleCellHover = async (cell) => {
+        const requestId = ++requestIdRef.current
+
+        setHoveredCell(cell)
+        setAiError('')
+
+        if (!cell || !cell.decision) {
+            setAiLoading(false)
+            setAiExplanation('')
+            return
+        }
+
+        const cacheKey = `${cell.type}-${cell.hand}-${cell.dealer}-${cell.decision}`
+
+        // Already cached
+        if (explanationCache.current.has(cacheKey)) {
+            const explanation = await explanationCache.current.get(cacheKey)
+
+            // Ignore if the user has moved to another cell
+            if (requestId !== requestIdRef.current) {
+                return
+            }
+
+            setAiExplanation(explanation)
+            setAiLoading(false)
+            return
+        }
+
+        setAiExplanation('')
+        setAiLoading(true)
+
+        const explanationPromise = getStrategyExplanation(cell)
+            .then((payload) => {
+                return payload.explanation || 'No explanation available.'
+            })
+
+        // Cache immediately so duplicate requests don't happen
+        explanationCache.current.set(cacheKey, explanationPromise)
+
+        try {
+            const explanation = await explanationPromise
+
+            // Ignore stale responses
+            if (requestId !== requestIdRef.current) {
+                return
+            }
+
+            setAiExplanation(explanation)
+            setAiLoading(false)
+
+        } catch (error) {
+            console.error(error)
+
+            explanationCache.current.delete(cacheKey)
+
+            if (requestId !== requestIdRef.current) {
+                return
+            }
+
+            setAiError('Unable to get an AI explanation right now.')
+            setAiLoading(false)
+        }
+    }
+
+    const getBubblePosition = (rect) => {
+        const gap = 12
+        const margin = 12
+
+        const bubbleWidth = Math.min(
+            280,
+            window.innerWidth - (margin * 2)
+        )
+
+        const rightPosition = rect.right + gap
+        const leftPosition = rect.left - bubbleWidth - gap
+
+        // Enough room on the right
+        if (rightPosition + bubbleWidth <= window.innerWidth - margin) {
+            return {
+                top: rect.top,
+                left: rightPosition,
+            }
+        }
+
+        // Enough room on the left
+        if (leftPosition >= margin) {
+            return {
+                top: rect.top,
+                left: leftPosition,
+            }
+        }
+
+        // Not enough room on either side.
+        // Keep the bubble completely inside the viewport.
+        return {
+            top: rect.top,
+            left: Math.max(
+                margin,
+                Math.min(
+                    rightPosition,
+                    window.innerWidth - bubbleWidth - margin
+                )
+            ),
+        }
+    }
+
+    /**
+     * Render the basic strategy board with strategy tables and AI explanation bubble.
+     * @returns {React.JSX.Element}
+     */
     return (
         <div className="basic-strategy-board">
+
+            {hoveredCell &&
+                createPortal(
+                    <div
+                        className="strategy-ai-bubble"
+                        style={getBubblePosition(hoveredCell.rect)}
+                    >
+                        <div className="strategy-ai-title">
+                            ✨ WHY {hoveredCell.decision}?
+                        </div>
+
+                        <div className="strategy-ai-context">
+                            {hoveredCell.hand} vs Dealer {hoveredCell.dealer}
+                        </div>
+
+                        <div className="strategy-ai-explanation">
+                            {aiLoading && (
+                                <div className="strategy-ai-loading">
+                                    ✨ AI is thinking...
+                                </div>
+                            )}
+
+                            {!aiLoading && aiError && (
+                                <div className="strategy-ai-error">
+                                    {aiError}
+                                </div>
+                            )}
+
+                            {!aiLoading && !aiError && aiExplanation && (
+                                <div>
+                                    {aiExplanation}
+                                </div>
+                            )}
+                        </div>
+                    </div>,
+                    document.body
+                )
+            }
+
             <StrategyTable
                 title="DEALER UPCARD"
                 sideLabel="HARD TOTALS"
                 rows={hardRows}
+                strategyType="hard"
+                onCellHover={handleCellHover}
             />
 
             <StrategyTable
                 title="DEALER UPCARD"
                 sideLabel="SOFT TOTALS"
                 rows={softRows}
+                strategyType="soft"
+                onCellHover={handleCellHover}
             />
 
             <StrategyTable
                 title="DEALER UPCARD"
                 sideLabel="PAIR SPLITTING"
                 rows={pairRows}
+                strategyType="pair"
+                onCellHover={handleCellHover}
             />
 
             <section className="strategy-section surrender-section">
@@ -160,6 +360,22 @@ function BasicStrategyBoard() {
                                     <td
                                         key={`${row[0]}-${dealerColumns[index]}`}
                                         className={cellClass(value)}
+                                        onMouseEnter={(event) => {
+                                            if (!value) return
+
+                                            handleCellHover({
+                                                hand: row[0],
+                                                dealer: dealerColumns[index],
+                                                decision: value,
+                                                type: 'surrender',
+                                                rect: event.currentTarget.getBoundingClientRect(),
+                                            })
+                                        }}
+                                        onMouseLeave={() => {
+                                            if (!value) return
+
+                                            handleCellHover(null)
+                                        }}
                                     >
                                         {value}
                                     </td>

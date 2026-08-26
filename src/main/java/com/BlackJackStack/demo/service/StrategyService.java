@@ -72,6 +72,28 @@ public class StrategyService {
     }
 
     /**
+     * Method to generate a strategy board explanation based on the decision, hand, dealer, and strategy type.
+     * @param decision
+     * @param hand
+     * @param dealer
+     * @param strategyType
+     * @return
+     */
+    public String generateStrategyBoardExplanation(
+            String decision,
+            String hand,
+            String dealer,
+            String strategyType
+    ) {
+        return recommendationExplanationService.generateStrategyBoardExplanation(
+                decision,
+                hand,
+                dealer,
+                strategyType
+        );
+    }
+
+    /**
      * Method to determine the basic strategy move based on player's hand and dealer's up card.
      * @param hand the player's Hand
      * @param dealerCard the dealer's up Card
