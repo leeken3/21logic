@@ -133,6 +133,16 @@ export function useBlackjackGame() {
         return nextDealerCards
     }
 
+    const revealDealerAfterBust = async (dealerCards) => {
+        dealerHandRef.current = dealerCards
+        setDealerHand(dealerCards)
+        setDealerHidden(false)
+
+        await pause(450)
+
+        return dealerCards
+    }
+
     // Normal Round Resolution: Compare player and dealer hands, determine outcome, and update state accordingly.
     const resolveDealerRound = async (playerCards, dealerCards, currentBet) => {
         syncPlayerHand(playerCards)
@@ -165,6 +175,26 @@ export function useBlackjackGame() {
 
         syncPlayerHand(playerCards)
         setHandMessage(outcome)
+        hasStartedRef.current = false
+        setHasStarted(false)
+        setHandComplete(true)
+        setSelectedAction('Hit')
+    }
+
+    const resolvePlayerBust = async (playerCards, dealerCards, currentBet) => {
+        syncPlayerHand(playerCards)
+
+        const nextDealerCards = await revealDealerAfterBust(dealerCards)
+        const dealerTotal = getHandTotal(nextDealerCards)
+        const playerTotal = getHandTotal(playerCards)
+
+        const outcome =
+            `Bust! Dealer reveals ${nextDealerCards[1]?.value || dealerCards[1]?.value || 'hidden'} ` +
+            `and totals ${dealerTotal}. You lose -$${currentBet}.`
+
+        syncPlayerHand(playerCards)
+        setHandMessage(outcome)
+
         hasStartedRef.current = false
         setHasStarted(false)
         setHandComplete(true)
@@ -287,10 +317,31 @@ export function useBlackjackGame() {
     }
 
     const resolveSplitRound = async (hands, dealerCards) => {
-        const nextDealerCards = await playDealerHand(dealerCards)
+        const rightTotal = getHandTotal(hands[SPLIT_RIGHT].cards)
+        const leftTotal = getHandTotal(hands[SPLIT_LEFT].cards)
+
+        const bothHandsBust =
+            rightTotal > 21 &&
+            leftTotal > 21
+
+        const nextDealerCards = bothHandsBust
+            ? await revealDealerAfterBust(dealerCards)
+            : await playDealerHand(dealerCards)
+
         const dealerTotal = getHandTotal(nextDealerCards)
-        const right = scoreSplitHand(hands[SPLIT_RIGHT].cards, dealerTotal, hands[SPLIT_RIGHT].bet)
-        const left = scoreSplitHand(hands[SPLIT_LEFT].cards, dealerTotal, hands[SPLIT_LEFT].bet)
+
+        const right = scoreSplitHand(
+            hands[SPLIT_RIGHT].cards,
+            dealerTotal,
+            hands[SPLIT_RIGHT].bet,
+        )
+
+        const left = scoreSplitHand(
+            hands[SPLIT_LEFT].cards,
+            dealerTotal,
+            hands[SPLIT_LEFT].bet,
+        )
+
         const net = right.net + left.net
 
         setHandMessage(
@@ -720,11 +771,19 @@ export function useBlackjackGame() {
                     getHandTotal(nextPlayerCards)
 
                 if (playerTotal >= 21) {
-                    await resolveDealerRound(
-                        nextPlayerCards,
-                        dealerCards,
-                        betRef.current,
-                    )
+                    if (playerTotal > 21) {
+                        await resolvePlayerBust(
+                            nextPlayerCards,
+                            dealerCards,
+                            betRef.current,
+                        )
+                    } else {
+                        await resolveDealerRound(
+                            nextPlayerCards,
+                            dealerCards,
+                            betRef.current,
+                        )
+                    }
 
                     return
                 }
@@ -799,11 +858,19 @@ export function useBlackjackGame() {
 
                 await pause(420)
 
-                await resolveDealerRound(
-                    nextPlayerCards,
-                    dealerCards,
-                    doubledBet,
-                )
+                if (getHandTotal(nextPlayerCards) > 21) {
+                    await resolvePlayerBust(
+                        nextPlayerCards,
+                        dealerCards,
+                        doubledBet,
+                    )
+                } else {
+                    await resolveDealerRound(
+                        nextPlayerCards,
+                        dealerCards,
+                        doubledBet,
+                    )
+                }
             }
         } finally {
             actionLockRef.current = false
