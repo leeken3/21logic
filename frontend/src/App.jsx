@@ -29,6 +29,7 @@ import RecommendationPanel from './components/RecommendationPanel'
 import CardInputForm from './components/CardInputForm'
 import GameBoard from './components/GameBoard'
 import HandResultPanel from './components/HandResultPanel'
+import BasicStrategyBoard from './components/BasicStrategyBoard'
 
 const defaultForm = {
   card1: '',
@@ -117,6 +118,9 @@ function App() {
   const [result, setResult] = useState(emptyResult)
   const [loading, setLoading] = useState(false)
   const [inputWarning, setInputWarning] = useState('')
+
+  const [appView, setAppView] = useState('practice')
+  const [optionsOpen, setOptionsOpen] = useState(false)
 
   const [flipPlayer1, setFlipPlayer1] = useState(false)
   const [flipPlayer2, setFlipPlayer2] = useState(false)
@@ -313,56 +317,104 @@ function App() {
       </header>
 
       <div className="table-surface">
+
         <div className="table-topbar">
-          <div className="top-label player-label">John</div>
-          <div className="top-label menu-label">Log Out</div>
+          <div className="top-label player-label">
+          </div>
+
+          <div className="options-wrapper">
+            <button
+                type="button"
+                className={`top-label menu-label options-button ${optionsOpen ? 'open' : ''}`}
+                onClick={() => setOptionsOpen((current) => !current)}
+            >
+              Options
+            </button>
+
+            {optionsOpen && (
+                <div className="options-menu">
+                  <button
+                      type="button"
+                      className={appView === 'practice' ? 'active' : ''}
+                      onClick={() => {
+                        setAppView('practice')
+                        setOptionsOpen(false)
+                      }}
+                  >
+                    Practice
+                  </button>
+
+                  <button
+                      type="button"
+                      className={appView === 'strategy' ? 'active' : ''}
+                      onClick={() => {
+                        setAppView('strategy')
+                        setOptionsOpen(false)
+                      }}
+                  >
+                    Basic Strategy
+                  </button>
+                </div>
+            )}
+          </div>
         </div>
 
-        <GameBoard
-            dealerCardsToRender={dealerCardsToRender}
-            dealerHidden={dealerHidden}
-            dealerTotal={dealerTotal}
-            flipDealer={flipDealer}
-            lastDrawnCard={lastDrawnCard}
-            showSplitBoard={showSplitBoard}
-            playerCardsToRender={playerCardsToRender}
-            playerTotal={playerTotal}
-            flipPlayer1={flipPlayer1}
-            flipPlayer2={flipPlayer2}
-            splitHands={splitHands}
-            activeSplitIndex={activeSplitIndex}
-            handComplete={handComplete}
-        />
+        {appView === 'practice' ? (
+            <>
+              <GameBoard
+                  dealerCardsToRender={dealerCardsToRender}
+                  dealerHidden={dealerHidden}
+                  dealerTotal={dealerTotal}
+                  flipDealer={flipDealer}
+                  lastDrawnCard={lastDrawnCard}
+                  showSplitBoard={showSplitBoard}
+                  playerCardsToRender={playerCardsToRender}
+                  playerTotal={playerTotal}
+                  flipPlayer1={flipPlayer1}
+                  flipPlayer2={flipPlayer2}
+                  splitHands={splitHands}
+                  activeSplitIndex={activeSplitIndex}
+                  handComplete={handComplete}
+              />
 
-        <ActionBar
-            onAction={(label) => handleActionSelect(label, formData)}
-            selectedAction={selectedAction}
-            disabled={actionsDisabled}
-            canSubmit={canSubmit}
-            startingPlayerHasBlackjack={startingPlayerHasBlackjack}
-            isSplitAvailable={isSplitAvailable}
-            canDoubleDown={canDoubleDown}
-            playerHasTwentyOne={playerHasTwentyOne}
-        />
+              <ActionBar
+                  onAction={(label) => handleActionSelect(label, formData)}
+                  selectedAction={selectedAction}
+                  disabled={actionsDisabled}
+                  canSubmit={canSubmit}
+                  startingPlayerHasBlackjack={startingPlayerHasBlackjack}
+                  isSplitAvailable={isSplitAvailable}
+                  canDoubleDown={canDoubleDown}
+                  playerHasTwentyOne={playerHasTwentyOne}
+              />
+            </>
+        ) : (
+            <BasicStrategyBoard />
+        )}
+
       </div>
 
-      <HandResultPanel
-          handMessage={handMessage}
-          handComplete={handComplete}
-          onReplay={handleReplayHand}
-          onRefresh={handleRefresh}
-      />
+      {appView === 'practice' && (
+          <>
+            <HandResultPanel
+                handMessage={handMessage}
+                handComplete={handComplete}
+                onReplay={handleReplayHand}
+                onRefresh={handleRefresh}
+            />
 
-      <CardInputForm
-          formData={formData}
-          inputWarning={inputWarning}
-          loading={loading}
-          canSubmit={canSubmit}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-      />
+            <CardInputForm
+                formData={formData}
+                inputWarning={inputWarning}
+                loading={loading}
+                canSubmit={canSubmit}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+            />
 
-      <RecommendationPanel result={result} />
+            <RecommendationPanel result={result} />
+          </>
+      )}
     </div>
   )
 }
