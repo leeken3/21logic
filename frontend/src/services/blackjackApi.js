@@ -2,18 +2,20 @@
  * This file contains functions for interacting with the backend API for a blackjack game, including getting recommendations and drawing cards.
  */
 
-/* Define the API URLs based on the environment (development or production) */
-const API_URL = import.meta.env.DEV
-    ? '/api/recommend'
-    : 'http://localhost:8080/api/recommend'
+/*
+ * Leave the base URL empty for same-origin deployments and local Vite development.
+ * In a separately hosted production frontend, set VITE_API_BASE_URL at build time.
+ */
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const API_BASE_URL = configuredApiBaseUrl
+    ? configuredApiBaseUrl.replace(/\/+$/, '')
+    : ''
 
-const DRAW_API_URL = import.meta.env.DEV
-    ? '/api/draw'
-    : 'http://localhost:8080/api/draw'
+const apiUrl = (path) => `${API_BASE_URL}${path}`
 
-const EXPLANATION_API_URL = import.meta.env.DEV
-    ? '/api/strategy-explanation'
-    : 'http://localhost:8080/api/strategy-explanation'
+const API_URL = apiUrl('/api/recommend')
+const DRAW_API_URL = apiUrl('/api/draw')
+const EXPLANATION_API_URL = apiUrl('/api/strategy-explanation')
 
 /**
  * Function to get a recommendation from the backend API based on the provided form data.
