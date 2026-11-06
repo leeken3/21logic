@@ -263,19 +263,33 @@ export function formatMoney(amount) {
     return '$0'
 }
 
+
 /**
- * Score a split hand against the dealer's total and return a summary and net result
- * @param cards
- * @param dealerTotal
- * @param bet
- * @returns {{summary: string, net: number}|{summary: string, net: *}|{summary: string, net: number}|{summary: string, net: *}|{summary: string, net: number}}
+ * Score a split hand against the dealer's total and return a summary and net result.
+ * @param {Array} cards
+ * @param {number} dealerTotal
+ * @param {number} bet
+ * @param {boolean} dealerBlackjack
+ * @returns {{summary: string, net: number}}
  */
-export function scoreSplitHand(cards, dealerTotal, bet) {
+export function scoreSplitHand(
+    cards,
+    dealerTotal,
+    bet,
+    dealerBlackjack = false,
+) {
     const playerTotal = getHandTotal(cards)
 
     if (playerTotal > 21) {
         return {
             summary: `busts with ${playerTotal}`,
+            net: -bet,
+        }
+    }
+
+    if (dealerBlackjack) {
+        return {
+            summary: 'loses to dealer blackjack',
             net: -bet,
         }
     }
@@ -306,6 +320,7 @@ export function scoreSplitHand(cards, dealerTotal, bet) {
         net: -bet,
     }
 }
+
 
 /**
  * Get the label for a split hand based on its index (1 for right hand, 2 for left hand)

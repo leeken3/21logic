@@ -173,7 +173,6 @@ export function useBlackjackGame() {
             outcome = `Dealer wins ${dealerTotal} to ${playerTotal}. You lose -$${currentBet}.`
         }
 
-        syncPlayerHand(playerCards)
         setHandMessage(outcome)
         hasStartedRef.current = false
         setHasStarted(false)
@@ -316,6 +315,7 @@ export function useBlackjackGame() {
         await resolveSplitRound(nextHands, dealerHandRef.current)
     }
 
+
     const resolveSplitRound = async (hands, dealerCards) => {
         const rightTotal = getHandTotal(hands[SPLIT_RIGHT].cards)
         const leftTotal = getHandTotal(hands[SPLIT_LEFT].cards)
@@ -329,17 +329,20 @@ export function useBlackjackGame() {
             : await playDealerHand(dealerCards)
 
         const dealerTotal = getHandTotal(nextDealerCards)
+        const dealerBlackjack = isBlackjack(nextDealerCards)
 
         const right = scoreSplitHand(
             hands[SPLIT_RIGHT].cards,
             dealerTotal,
             hands[SPLIT_RIGHT].bet,
+            dealerBlackjack,
         )
 
         const left = scoreSplitHand(
             hands[SPLIT_LEFT].cards,
             dealerTotal,
             hands[SPLIT_LEFT].bet,
+            dealerBlackjack,
         )
 
         const net = right.net + left.net
@@ -357,6 +360,7 @@ export function useBlackjackGame() {
         setHandComplete(true)
         setSelectedAction('Hit')
     }
+
 
     const handleActionSelect = async (label, formData) => {
         if (handComplete) return
