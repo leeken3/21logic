@@ -36,3 +36,8 @@ build/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
