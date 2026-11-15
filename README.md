@@ -1,126 +1,393 @@
-# 21Logic: Blackjack Simulation Engine
+# 21 Logic — Blackjack Strategy & Simulation Engine
 
-## Project Description
-This is a simple Blackjack simulator engine implemented using Spring Boot as the main framework. The application simulates a hand of Blackjack and provides basic strategy recommendations based on the player's hand and the dealer's upcard.
-The user is also able to interactively play out the hand against the dealer. The application provides insights into the probabilities of busting for both the player and the dealer, as well as an analysis of the dealer's upcard.
-This application was developed as a personal project to enhance my understanding of Spring Boot as a back-end framework while using Java programming, JUnit automated testing, and cloud deployment on Amazon Web Services (AWS).
+**21 Logic** is a full-stack Blackjack strategy and simulation application designed to help players understand optimal basic strategy, evaluate game scenarios, and improve their decision-making through interactive gameplay and AI-powered explanations.
+
+The application combines a Java-based strategy engine with probability analysis, interactive Blackjack simulations, and an integrated AI Coach that translates strategic recommendations into clear, contextual explanations.
+
+Rather than relying on intuition or memorizing isolated decisions, players can explore different hands, evaluate the dealer's upcard, understand the statistical reasoning behind recommended actions, and play through complete hands against the dealer.
+
+**Live Application:** [Play 21 Logic](https://logic21-backend-758391439812.us-west1.run.app/)
+
+**Source Code:** [GitHub Repository](https://github.com/leeken3/21logic)
+
+---
 
 ## Key Features
-- Provides basic strategy recommendations such as hit, stand, double down, and split
-- Provides player and dealer's bust probability
-- Provides dealer's upcard analysis
-- Provides an explanation of the basic strategy recommendation
-- Interactive gameplay against the dealer with options to hit, stand, double down, and split
 
-## Technologies Used
-For this project, I wanted to explore and learn more about Spring Boot, so I chose it as the primary framework. The project also utilizes:
+### Blackjack Basic Strategy Engine
+- Generates optimal basic strategy recommendations based on the player's hand and dealer's upcard.
+- Supports core Blackjack decisions: Hit, Stand, Double Down, and Split.
+- Evaluates hard totals, soft totals, and pairs.
+- Provides contextual explanations for recommended actions.
+- Helps players understand how dealer upcards influence optimal decisions.
 
-### Front-end
-- Thymeleaf: For server-side rendering of HTML templates
-- Bootstrap (v5.36): For responsive and modern UI design
-- HTML5: For structuring the web pages
-- CSS3 (5.01): For styling the web pages
-- JavaScript (ECMAScript 2024): For client-side interactivity
+### Probability & Statistical Analysis
+- Calculates player bust probabilities to illustrate the risk associated with additional cards.
+- Evaluates dealer bust probabilities based on the dealer's upcard.
+- Provides statistical insights into dealer upcard strength and potential outcomes.
+- Uses probability analysis to supplement strategy recommendations and demonstrate the mathematical reasoning behind Blackjack decisions.
 
-### Back-end
-- Java (v17): The main programming language used for the application logic
-- Spring Boot (v3.2.4): For building the web application and handling HTTP requests
-- Spring MVC: For implementing the Model-View-Controller architecture
-- JPA (Java Persistence API): For database interactions and ORM (Object-Relational Mapping)
-- Maven: For project management and dependency management
-- JUnit5: For unit testing the application components
-- Mockito: For mocking dependencies in unit tests
-- Spring Boot Starter Web & Thymeleaf: For web and template support, RESTful services
-- Spring Boot DevTools: For development-time features like automatic restarts and live reload
+### Interactive Blackjack Simulation
+- Play complete hands against a simulated dealer.
+- Draw cards, stand, double down, and split hands.
+- Resolve player and dealer hands according to Blackjack game rules.
+- Track hand outcomes, including wins, losses, pushes, and busts.
+- Evaluate strategic decisions while playing through simulated scenarios.
 
-### AI Coach
-- Hosted AI providers such as Groq or Gemini may generate recommendation explanations when configured.
-- Local Ollama is no longer required for deployment.
-- Default provider: `groq`
-- Default model: `llama-3.3-70b-versatile`
-- If the provider is unavailable, the app automatically falls back to deterministic rule-based explanations.
+### AI-Powered Blackjack Coach
+- Integrates hosted large language models to provide contextual explanations of strategy recommendations.
+- Supports Groq and Google Gemini as configurable AI providers.
+- Uses structured game context to explain why a particular action is recommended.
+- Translates strategy and probability outputs into accessible explanations.
+- Automatically falls back to deterministic, rule-based explanations when an AI provider is unavailable.
 
-### Deployment
-- AWS Elastic Beanstalk (2025): For deploying and managing the application in the cloud
-- AWS EC2 (Elastic Compute Cloud): For hosting the application server
-- AWS S3 (Simple Storage Service): For storing static assets and backups
-- AWS CloudWatch: For monitoring and logging application performance
-- AWS IAM (Identity and Access Management): For managing access to AWS resources
-- AWS Route 53: For domain name management and routing traffic to the application
-- AWS CloudFormation: For automating the deployment and management of AWS resources
+The AI Coach complements the deterministic strategy engine rather than replacing it. Strategic decisions are generated by the application logic, while the AI provides an additional explanatory layer.
 
-### Project Management
-- Git (2025): Version control system for tracking changes in the codebase
-- GitHub (2025): Hosting platform for the Git repository
-- Eclipse IDE (2025-09) : Integrated Development Environment for coding and debugging
-- Postman (v10.18.1): For testing and debugging RESTful APIs
+---
 
-## Usage
-- Visit the deployed application at: http://21logicapplication-env.eba-gqaqabce.us-east-2.elasticbeanstalk.com/
-- Input the player's hand and dealer's upcard
-- Click "Get Recommendation" to receive a basic strategy recommendation, bust probabilities, and dealer upcard analysis
-- Optionally, play out the hand interactively against the dealer
-- If a hosted AI provider is configured, the explanation text is generated with the AI Coach; otherwise the game uses the built-in deterministic fallback
+## Technology Stack
 
-## Installation
-- Ensure you have Java 17 and Maven installed on your machine.
-- Configure AI environment variables before starting the app, for example:
-  - `AI_ENABLED=true`
-  - `AI_PROVIDER=groq`
-  - `AI_MODEL=llama-3.3-70b-versatile`
-  - `AI_API_KEY=your_api_key_here`
-  - `CORS_ALLOWED_ORIGINS=https://your-frontend-domain.example`
-- For a separately hosted frontend, set `VITE_API_BASE_URL` to the deployed backend origin during the frontend build. Leave it unset for same-origin deployments or local Vite development.
-- Clone the repository: `git clone`
-- Navigate to the project directory: `cd BlackJackStack`
-- Build the project using Maven: `mvn clean install`
-- Run the application: `mvn spring-boot:run`
-- Access the application in your web browser at `http://localhost:8080`
+### Frontend
+
+| Technology | Purpose |
+|---|---|
+| React 19 | Component-based frontend architecture and interactive UI |
+| JavaScript (ES2024) | Client-side application logic and API integration |
+| Vite 8 | Frontend development server and production build tooling |
+| HTML5 | Application structure |
+| CSS3 | Styling and presentation |
+| Fetch API | Asynchronous communication with backend REST endpoints |
+
+### Backend
+
+| Technology | Purpose |
+|---|---|
+| Java 17 | Core application and simulation logic |
+| Spring Boot 3.2.4 | Backend application framework |
+| Spring MVC | REST API development and HTTP request handling |
+| Maven | Dependency management and build automation |
+| JUnit 5 | Automated unit testing |
+| Mockito | Dependency mocking and isolated testing |
+
+### AI & LLM Integration
+
+| Technology | Purpose |
+|---|---|
+| Groq API | Hosted LLM inference for AI-generated explanations |
+| Google Gemini API | Alternative hosted AI provider |
+| OpenAI-compatible API integration | Configurable provider communication |
+| Deterministic fallback | Reliable rule-based explanations when AI services are unavailable |
+
+**Default deployment configuration:**
+- Provider: Groq
+- Model: `openai/gpt-oss-120b`
+- AI integration: Configurable through environment variables
+
+### Cloud Infrastructure & Deployment
+
+| Technology | Purpose |
+|---|---|
+| Google Cloud Run | Containerized application hosting and serverless deployment |
+| Google Cloud Build | Automated application builds |
+| Google Artifact Registry | Container image storage |
+| Google Secret Manager | Secure storage and injection of AI API credentials |
+| Google Cloud IAM | Service account permissions and access management |
+| Google Developer Connect | GitHub repository integration for cloud builds |
+| GitHub | Source control and project repository |
+
+The application is currently deployed as a single-origin application, with the React frontend and Spring Boot backend served through the same Cloud Run service.
+
+Cloud Run uses request-based billing with scale-to-zero configuration to minimize idle infrastructure costs.
+
+### Development & API Tooling
+
+| Technology | Purpose |
+|---|---|
+| Git | Version control |
+| GitHub | Repository hosting and source management |
+| IntelliJ IDEA | Java development and debugging |
+| Visual Studio Code | Frontend development |
+| Postman | REST API testing and debugging |
+| Chrome Developer Tools | Frontend debugging and network inspection |
+
+---
+
+## Application Architecture
+
+21 Logic uses a layered architecture that separates the user interface, application logic, Blackjack strategy calculations, and AI explanation services.
+
+```text
+                 USER INTERFACE
+                       |
+                       v
+              React 19 + Vite
+                       |
+                       v
+                REST API Layer
+                 Spring MVC
+                       |
+          +------------+-------------+
+          |            |             |
+          v            v             v
+     Strategy      Simulation     Probability
+      Engine         Engine         Analysis
+          |            |             |
+          +------------+-------------+
+                       |
+                       v
+                 AI Coach Service
+                       |
+              +--------+--------+
+              |                 |
+              v                 v
+           Groq API         Gemini API
+              |                 |
+              +--------+--------+
+                       |
+                Rule-Based Fallback
+```
+
+### Backend Responsibilities
+
+The Spring Boot backend handles:
+- Blackjack strategy evaluation.
+- Game state and hand resolution.
+- Card drawing and dealer simulation.
+- Player and dealer probability calculations.
+- REST API request handling.
+- AI provider integration and fallback behavior.
+
+### Frontend Responsibilities
+
+The React application handles:
+- Interactive Blackjack gameplay.
+- Player hand and dealer hand presentation.
+- Strategy recommendation displays.
+- Probability and dealer analysis presentation.
+- API communication and game state interactions.
+- AI Coach explanations.
+
+### API Endpoints
+
+The frontend communicates with the backend through REST endpoints.
+
+| Endpoint | Responsibility |
+|---|---|
+| `POST /api/recommend` | Generate a strategy recommendation and supporting analysis |
+| `POST /api/draw` | Execute a card draw during interactive gameplay |
+| `POST /api/strategy-explanation` | Generate an explanation of a strategy recommendation |
+
+---
+
+## Deployment
+
+21 Logic is deployed on **Google Cloud Run**, providing a publicly accessible application without requiring users to install software or configure a local environment.
+
+**Production URL:**  
+https://logic21-backend-758391439812.us-west1.run.app/
+
+### Deployment Architecture
+
+- GitHub serves as the source repository.
+- Google Developer Connect links the repository to Google Cloud.
+- Google Cloud Build builds the application from the repository.
+- Buildpacks detect and build the Java/Spring Boot application.
+- The frontend is built using Vite and packaged with the application.
+- Google Artifact Registry stores the resulting container image.
+- Cloud Run deploys the application as a managed service.
+- Secret Manager provides the AI API key at runtime.
+
+### Runtime Configuration
+
+The deployment uses:
+- Java 17.
+- Request-based Cloud Run billing.
+- Minimum instances: 0.
+- Maximum instances: 1.
+- 512 MiB memory.
+- 1 vCPU.
+- Public HTTP access.
+
+---
+
+## Installation & Local Development
+
+### Prerequisites
+
+- Java 17
+- Node.js and npm
+- Git
+- Maven (optional when using the included Maven Wrapper)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/leeken3/21logic.git
+cd 21logic
+```
+
+### 2. Start the Spring Boot Backend
+
+From the repository root:
+
+**Windows PowerShell:**
+```powershell
+.\mvnw spring-boot:run
+```
+
+**macOS / Linux:**
+```bash
+./mvnw spring-boot:run
+```
+
+The backend runs at:
+
+```text
+http://localhost:8080
+```
+
+### 3. Start the React Frontend
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The Vite development server runs at:
+
+```text
+http://localhost:5173
+```
+
+The local frontend uses the Vite development proxy to communicate with the Spring Boot backend.
+
+### 4. Configure AI Integration (Optional)
+
+AI functionality can be configured through environment variables.
+
+```dotenv
+AI_ENABLED=true
+AI_PROVIDER=groq
+AI_MODEL=openai/gpt-oss-120b
+AI_API_KEY=your_api_key_here
+AI_TIMEOUT_SECONDS=20
+```
+
+For Google Gemini, configure:
+
+```dotenv
+AI_PROVIDER=gemini
+```
+
+Keep API credentials in environment variables or a secure secrets manager. Never commit actual API keys or `.env` files to GitHub.
+
+When AI integration is disabled or unavailable, the application uses its deterministic explanation fallback.
+
+### 5. Build and Test
+
+Build the frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+Run backend tests from the repository root:
+
+```bash
+.\mvnw test
+```
+
+Package the backend:
+
+```bash
+.\mvnw clean package
+```
+
+---
 
 ## Project Structure
-The project follows a standard Maven project structure:
-- `src/main/java/com/BlackJackStack/demo`: Contains the main application class and configuration files.
-- `src/main/java/com/BlackJackStack/demo/controller`: Contains the Spring MVC controllers that handle HTTP requests and responses.
-- `src/main/java/com/BlackJackStack/demo/service`: Contains the service layer that encapsulates the business logic of the application.
-- `src/main/java/com/BlackJackStack/demo/model`: Contains the data models representing the entities in the application.
-- `src/main/resources/static`: Contains static assets such as CSS, JavaScript, and images.
-- `src/main/resources/templates`: Contains Thymeleaf HTML templates for rendering views.
-- `src/main/resources/application.properties`: Contains application configuration settings.
-- `src/test/java`: Contains unit tests for the application components.
-- `aws`: Contains AWS CloudFormation templates and deployment scripts.
-- `target`: Contains the compiled application and build artifacts.
-- `pom.xml`: Maven configuration file that manages project dependencies and build settings.
-- `README.md`: Project documentation and instructions.
-- `.gitignore`: Specifies files and directories to be ignored by Git.
-- `application.properties`: Configuration file for Spring Boot application settings.
 
-## Limitations and Future Enhancements
+```text
+21logic/
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.js
+│
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/BlackJackStack/demo/
+│   │   │       ├── controller/
+│   │   │       ├── service/
+│   │   │       ├── model/
+│   │   │       └── configuration/
+│   │   │
+│   │   └── resources/
+│   │       └── application.properties
+│   │
+│   └── test/
+│       └── java/
+│
+├── aws/
+│
+├── pom.xml
+├── mvnw
+├── project.toml
+├── system.properties
+├── .gitignore
+└── README.md
+```
 
-### Limitations
-- The current implementation does not include advanced betting strategies or side bets.
-- The user interface is basic and could be improved for better user experience. The focus of this project was primarily on back-end functionality and not front-end design.
-- The simulation does not account for multiple players or complex game rules variations.
-- The application currently runs in a single-threaded mode, which may limit performance for large simulations.
-- The application does not include a database for storing historical game data, user profiles, authentication, or account management.
-- The application does not currently support mobile responsiveness or accessibility features.
+---
 
-### Future Enhancements
-- Implement advanced betting strategies, side bets, insurance options, surrender options, and multi-deck support.
-- Include Blackjack variants such as Spanish 21, Free Bet Blackjack, Double Down Madness and more.
-- Improve the user interface with more interactive elements and better design.
-- Include a database to store historical game data and player statistics.
-- Implement user authentication, session management, and account features.
+## Testing & Reliability
 
-## Acknowledgements
-- Special thanks to the Spring Boot community and documentation for their invaluable resources and support.
-- Thanks to AWS for providing comprehensive documentation and tutorials on deploying applications in the cloud.
+Automated backend testing is implemented using JUnit 5 and Mockito.
 
-## About Me
-- Name: Ken Lee
-- Email: klee474@my.bcit.ca
-- GitHub: https://github.com/leeken3
+The test suite has previously passed **41 automated tests**, covering backend functionality and application logic.
 
-I am a passionate first year software developer studying at BCIT in the Computer Systems Technology program. I have a strong interest and desire to learn more about
-back-end development, particularly in Java and Spring Boot. This personal project is a reflection of my enthusiasm for coding and my commitment 
-to continuous learning and improvement in the field of software development. I learned plenty of new skills while working on this project as well as encountering
-and overcoming various challenges. Feel free to explore the code, provide feedback, or contribute to the project!
+Additional reliability considerations include:
+- Separation of strategy calculations from AI-generated explanations.
+- Deterministic fallback behavior when external AI services fail.
+- Environment-based configuration for deployment flexibility.
+- Secure API credential management through Google Secret Manager.
+- Independent frontend and backend development workflows.
+
+---
+
+## Limitations & Future Development
+
+The current implementation focuses on core Blackjack gameplay, basic strategy, probability analysis, and AI-assisted explanations.
+
+Potential future enhancements include:
+
+- Multi-deck Blackjack simulation.
+- Configurable casino rules and table variations.
+- Insurance, surrender, and side-bet support.
+- More advanced statistical simulations and expected-value analysis.
+- Historical game tracking and player performance analytics.
+- Additional Blackjack variants, including Spanish 21 and Free Bet Blackjack.
+- Expanded strategy explanations and AI Coach capabilities.
+- Improved accessibility and user experience.
+
+---
+
+## About
+
+21 Logic is a personal software project focused on combining game simulation, statistical analysis, backend engineering, and applied AI into a practical interactive application.
+
+The goal is to make Blackjack strategy more accessible by helping players understand not only what decision to make, but why that decision is mathematically and strategically sound.
+
+**Developer:** Ken Lee  
+**GitHub:** [github.com/leeken3](https://github.com/leeken3)
+
+---
+
+*21 Logic is an educational strategy and simulation tool. Its recommendations are based on Blackjack basic strategy and configured game assumptions; they do not guarantee winning outcomes or eliminate the house edge.*
